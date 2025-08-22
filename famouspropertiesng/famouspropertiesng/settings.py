@@ -146,6 +146,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://dafetiteogaga.github.io",  # If deployed
 ]
 
+# This is where collectstatic will put all files
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# If you have app-specific static (like DRF)
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
 # REST_FRAMEWORK = {
 #     "DEFAULT_AUTHENTICATION_CLASSES": (
 #         "rest_framework_simplejwt.authentication.JWTAuthentication",
