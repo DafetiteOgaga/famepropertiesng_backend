@@ -6,7 +6,7 @@ import json
 from .models import FeatureAdvert
 from hooks.deleteImage import delete_image
 
-# Create your views here.
+# Create your views here..
 @api_view(['POST', 'GET'])
 @csrf_exempt
 def featuresAdvert(request):
