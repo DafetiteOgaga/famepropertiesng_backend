@@ -143,7 +143,7 @@ AUTH_USER_MODEL = 'users.User'
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000", # React dev server
     "http://localhost:3000",  # React dev server
-    "https://dafetiteogaga.github.io/famepropertiesng_repo/",  # If deployed
+    "https://dafetiteogaga.github.io",  # If deployed
 ]
 
 # REST_FRAMEWORK = {
