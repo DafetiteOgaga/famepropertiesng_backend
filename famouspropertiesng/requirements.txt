@@ -6,7 +6,7 @@ Django==5.2.5
 django-cors-headers==4.7.0
 django-extensions==4.1
 djangorestframework==3.16.1
-djangorestframework_simplejwt==5.5.1
+djangorestframework-simplejwt==5.5.1
 google-auth==2.40.3
 idna==3.10
 imagekitio==4.1.0
