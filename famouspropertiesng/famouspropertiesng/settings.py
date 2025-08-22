@@ -147,7 +147,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # This is where collectstatic will put all files
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'static' # this should be auto added in startproject command
 
 # If you have app-specific static (like DRF)
 # STATICFILES_DIRS = [
