@@ -51,6 +51,7 @@ def google_login(request):
 @api_view(['POST', 'GET'])
 def generate_signature(request):
     timestamp = str(int(time.time()))
+    
     signature = hmac.new(
         settings.IMAGEKIT_PRIVATE_KEY.encode(),
         timestamp.encode(),
@@ -62,6 +63,7 @@ def generate_signature(request):
         "expire": timestamp,
         "token": settings.IMAGEKIT_PUBLIC_KEY
     })
+    # return JsonResponse({"true": "true"})
 
 @api_view(['POST', 'GET'])
 def imagekit_auth(request):
@@ -83,6 +85,7 @@ def imagekit_auth(request):
         "expire": int(expire),  # Should be integer, not string
         "signature": signature
     })
+    # return JsonResponse({"true": "true"})
 
 # @api_view(['POST', 'GET'])
 # @csrf_exempt
