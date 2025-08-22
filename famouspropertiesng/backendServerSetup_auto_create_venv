@@ -76,8 +76,8 @@ echo ""
 sleep 2
 
 # collect static files for production
-python manage.py collectstatic --noinput
-sleep 2
-echo "##### static files collected ..."
+# python manage.py collectstatic --noinput
+# sleep 2
+# echo "##### static files collected ..."
 echo ""
 # sleep 2
