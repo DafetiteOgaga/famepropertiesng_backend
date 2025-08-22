@@ -150,9 +150,9 @@ CORS_ALLOWED_ORIGINS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # If you have app-specific static (like DRF)
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / 'static',
+# ]
 
 # REST_FRAMEWORK = {
 #     "DEFAULT_AUTHENTICATION_CLASSES": (
