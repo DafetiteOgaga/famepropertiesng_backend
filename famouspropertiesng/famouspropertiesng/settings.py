@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+import requests
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,10 @@ SECRET_KEY = 'django-insecure-+%t3_kcy-t%=66o$oyh6h+r@o*xo#izk70r7px@ik&as-e5hxq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost', # Localhost for development
+    '127.0.0.1', # Localhost for development
+]
 
 
 # Application definition
@@ -37,10 +42,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'products',		# <- added startapp here
+    'featuresadvert',		# <- added startapp here
+    'productsadvert',		# <- added startapp here
+    'carousels',		# <- added startapp here
+    'auth_app',		# <- added startapp here
+    'users',		# <- added startapp here
+    'rest_framework', # Django REST Framework for building APIs
+    'corsheaders',  # For cross-origin requests
+    'homepage',		# <- added startapp here
     'django_extensions',		# <- added django_extensions here
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # Middleware for handling CORS
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -121,3 +136,37 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'users.User'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000", # React dev server
+    "http://localhost:3000",  # React dev server
+    "https://yourfrontenddomain.com",  # If deployed
+]
+
+# REST_FRAMEWORK = {
+#     "DEFAULT_AUTHENTICATION_CLASSES": (
+#         "rest_framework_simplejwt.authentication.JWTAuthentication",
+#     )
+# }
+
+# SIMPLE_JWT = {
+#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+#     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+# }
+
+response = requests.get("https://dafetiteapiendpoint.pythonanywhere.com/get-imagekit-apis/")
+data = response.json()
+IMAGEKIT_PRIVATE_KEY = data.get("IMAGEKIT_PRIVATE_KEY")  # extract the private key
+IMAGEKIT_PUBLIC_KEY = data.get("IMAGEKIT_PUBLIC_KEY")  # extract the public key
+IMAGEKIT_URL_ENDPOINT = data.get("IMAGEKIT_URL_ENDPOINT")  # extract the endpoint
+print(f"Private key fetched: {IMAGEKIT_PRIVATE_KEY}")
+print(f"Public key fetched: {IMAGEKIT_PUBLIC_KEY}")
+print(f"ImageKit endpoint fetched: {IMAGEKIT_URL_ENDPOINT}")
+
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:3000",   # React local dev
+#     "http://127.0.0.1:3000",   # optional, in case you access via 127.0.0.1
+#     "https://yourdomain.com",  # production domain
+# ]
