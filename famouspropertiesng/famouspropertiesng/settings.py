@@ -143,7 +143,7 @@ AUTH_USER_MODEL = 'users.User'
 CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000", # React dev server
     "http://localhost:3000",  # React dev server
-    "https://yourfrontenddomain.com",  # If deployed
+    "https://dafetiteogaga.github.io/famepropertiesng_repo/",  # If deployed
 ]
 
 # REST_FRAMEWORK = {
@@ -162,9 +162,10 @@ data = response.json()
 IMAGEKIT_PRIVATE_KEY = data.get("IMAGEKIT_PRIVATE_KEY")  # extract the private key
 IMAGEKIT_PUBLIC_KEY = data.get("IMAGEKIT_PUBLIC_KEY")  # extract the public key
 IMAGEKIT_URL_ENDPOINT = data.get("IMAGEKIT_URL_ENDPOINT")  # extract the endpoint
-print(f"Private key fetched: {IMAGEKIT_PRIVATE_KEY}")
-print(f"Public key fetched: {IMAGEKIT_PUBLIC_KEY}")
-print(f"ImageKit endpoint fetched: {IMAGEKIT_URL_ENDPOINT}")
+# print(f"Private key fetched: {IMAGEKIT_PRIVATE_KEY}")
+# print(f"Public key fetched: {IMAGEKIT_PUBLIC_KEY}")
+# print(f"ImageKit endpoint fetched: {IMAGEKIT_URL_ENDPOINT}")
+
 
 # CSRF_TRUSTED_ORIGINS = [
 #     "http://localhost:3000",   # React local dev
