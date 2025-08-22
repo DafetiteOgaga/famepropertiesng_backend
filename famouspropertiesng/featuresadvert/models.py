@@ -1,6 +1,6 @@
 from django.db import models
 
-# Create your models here.
+# Create your models here..
 class FeatureAdvert(models.Model):
     anchor = models.CharField(max_length=200)
     paragraph = models.TextField()
