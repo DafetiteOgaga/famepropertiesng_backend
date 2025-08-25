@@ -13,6 +13,8 @@ import base64, hmac, hashlib, time, json
 from django.http import JsonResponse
 from django.conf import settings
 from rest_framework_simplejwt.views import TokenObtainPairView
+# from django.forms.models import model_to_dict
+from users.serializers import UserSerializer, ResponseUserSerializer
 # from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -120,6 +122,8 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         if not user:
             # print('incorrect password#####')
             return Response({"error": "Incorrect password."}, status=status.HTTP_404_NOT_FOUND)
+        # serializer = UserSerializer(user).data
+        # pretty_print_json(serializer)
 
         # 4. If authentication passes, use normal JWT process
         response = super().post(request, *args, **kwargs)
@@ -136,6 +140,9 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         # don't expose refresh in JSON anymore by removing it from response data
         del data["refresh"]
+
+        # add user info to response
+        data["user"] = ResponseUserSerializer(user).data
 
         return response
 
