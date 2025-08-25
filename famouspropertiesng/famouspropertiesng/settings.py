@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
-import requests
+import requests, os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -154,16 +154,18 @@ STATIC_ROOT = BASE_DIR / 'static' # this should be auto added in startproject co
 #     BASE_DIR / 'static',
 # ]
 
-# REST_FRAMEWORK = {
-#     "DEFAULT_AUTHENTICATION_CLASSES": (
-#         "rest_framework_simplejwt.authentication.JWTAuthentication",
-#     )
-# }
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
+}
 
-# SIMPLE_JWT = {
-#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-#     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-# }
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),   # default 5, now 15
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),     # default 1, now 7 days
+    "ROTATE_REFRESH_TOKENS": True,                   # issue a new refresh each time
+    "BLACKLIST_AFTER_ROTATION": True,                # block old refresh after rotation
+}
 
 response = requests.get("https://dafetiteapiendpoint.pythonanywhere.com/get-imagekit-apis/")
 data = response.json()
@@ -180,3 +182,5 @@ IMAGEKIT_URL_ENDPOINT = data.get("IMAGEKIT_URL_ENDPOINT")  # extract the endpoin
 #     "http://127.0.0.1:3000",   # optional, in case you access via 127.0.0.1
 #     "https://yourdomain.com",  # production domain
 # ]
+
+# print(f"django dev: {os.environ.get('DJANGO_DEVELOPMENT')}")

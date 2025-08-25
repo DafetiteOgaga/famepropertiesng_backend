@@ -2,15 +2,20 @@
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 # (Optional) Create JWT token for your app (if using DRF SimpleJWT)
 from rest_framework_simplejwt.tokens import RefreshToken
 from hooks.prettyprint import pretty_print_json
 import base64, hmac, hashlib, time, json
 from django.http import JsonResponse
 from django.conf import settings
+from rest_framework_simplejwt.views import TokenObtainPairView
+# from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
 # from django.views.decorators.csrf import csrf_exempt
 # from .models import Product
 
@@ -86,6 +91,53 @@ def imagekit_auth(request):
         "signature": signature
     })
     # return JsonResponse({"true": "true"})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def secret_data(request):
+    return Response({"message": "You are authenticated! 🎉"})
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        # 1. Check if email was provided
+        if not email or not password:
+            return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Check if user exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "No account found with this email."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 3. Authenticate user (checks password)
+        # print('got here#####')
+        user = authenticate(request, username=email, password=password)
+        # print(f'authenticated user: {user}')
+        if not user:
+            # print('incorrect password#####')
+            return Response({"error": "Incorrect password."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 4. If authentication passes, use normal JWT process
+        response = super().post(request, *args, **kwargs)
+        data = response.data
+
+        # store refresh token in HTTP-only cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=data["refresh"],
+            httponly=True,       # <--- makes cookie invisible to JS
+            secure=False if settings.DEBUG else True, # True in prod,         # <--- only sent over HTTPS
+            samesite="Lax" if settings.DEBUG else "None" # "None" in prod,   # <--- prevent CSRF attacks
+        )
+
+        # don't expose refresh in JSON anymore by removing it from response data
+        del data["refresh"]
+
+        return response
 
 # @api_view(['POST', 'GET'])
 # @csrf_exempt
