@@ -1,5 +1,9 @@
 from django.urls import path
 from . import views
+from rest_framework_simplejwt.views import (
+#     TokenObtainPairView,
+    TokenRefreshView,
+)
 
 app_name = "auth_app"
 
@@ -9,4 +13,8 @@ urlpatterns = [
 	path("api/authenticate/", views.generate_signature, name="generate_signature"),
 	path("imagekit-auth/", views.imagekit_auth, name="imagekit_auth"),
 	# path("products/", views.products, name="product_list_create"),
+	# path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # login
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # refresh
+    path("api/token/", views.CookieTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path('secret-data/', views.secret_data, name='secret_data'),  # Example protected route
 ]
