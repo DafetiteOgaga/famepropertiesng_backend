@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import *
+from .serializers import ResponseUserSerializer
 # from app_bank.models import *
 # from app_bank.serializers import *
 # from app_location.models import Location
@@ -41,3 +42,10 @@ def users(request, pk=None):
 				]
 		}
 	return Response(user_data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def allUsers(request):
+	users = User.objects.all()
+	users_serializer = ResponseUserSerializer(users, many=True).data
+	# print(f'All Users: {users_serializer}')
+	return Response({"allUsers": users_serializer}, status=status.HTTP_200_OK)
