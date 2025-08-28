@@ -130,19 +130,20 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         data = response.data
 
         # store refresh token in HTTP-only cookie
-        response.set_cookie(
-            key="refresh_token",
-            value=data["refresh"],
-            httponly=True,       # <--- makes cookie invisible to JS
-            secure=False if settings.DEBUG else True, # True in prod,         # <--- only sent over HTTPS
-            samesite="Lax" if settings.DEBUG else "None" # "None" in prod,   # <--- prevent CSRF attacks
-        )
+        # response.set_cookie(
+        #     key="refresh_token",
+        #     value=data["refresh"],
+        #     httponly=True,       # <--- makes cookie invisible to JS
+        #     secure=False if settings.DEBUG else True, # True in prod,         # <--- only sent over HTTPS
+        #     samesite="Lax" if settings.DEBUG else "None" # "None" in prod,   # <--- prevent CSRF attacks
+        # )
 
         # don't expose refresh in JSON anymore by removing it from response data
-        del data["refresh"]
+        # del data["refresh"]
 
         # add user info to response
         data["user"] = ResponseUserSerializer(user).data
+        # data["rot"] = "21"
 
         return response
 
