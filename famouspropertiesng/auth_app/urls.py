@@ -17,4 +17,5 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # refresh
     path("api/token/", views.CookieTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path('secret-data/', views.secret_data, name='secret_data'),  # Example protected route
+    path("check-email/<str:email>/", views.check_email, name="check_email"),
 ]
