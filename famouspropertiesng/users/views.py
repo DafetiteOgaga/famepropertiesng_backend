@@ -16,9 +16,9 @@ from hooks.prettyprint import pretty_print_json
 # User = get_user_model()
 
 allowed_fields = [
-	"address"
-	"city"
-	"country"
+	"address",
+	"city",
+	"country",
 	"email",
 	"first_name",
 	"last_name",
@@ -41,17 +41,29 @@ def users(request, pk=None):
 		print(f"Received data for new user:")
 		pretty_print_json(data)
 
-		user_data = {field: data.get(field) for field in allowed_fields if field in data}
+		# user_data = {field: data.get(field) for field in allowed_fields if field in data}
+		user_data = {}
+		data_keys = data.keys()
+		print(f"Data keys: {data_keys}")
+		for field in allowed_fields:
+			if field in data_keys:
+				user_data[field] = data[field]
+			else:
+				print(f"Field '{field}' not in received data.")
 
 		print(f"Filtered user data to be saved:")
 		pretty_print_json(user_data)
 
-		checkEmail = data.get("email")
+		checkEmail = data["email"]
+		print(f"Checking email: {checkEmail}")
 		user_exists = User.objects.filter(email=checkEmail).exists()
+		print(f"User exists query result: {user_exists}")
 		if user_exists:
+			print("User with this email exists.")
 			return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+		print("Email is unique, proceeding to create user.")
 
-		password = data.pop("password", None)  # remove password from dict if present
+		password = user_data.pop("password", None)  # remove password from dict if present
 		new_user = User.objects.create(**user_data)
 
 		if password:
