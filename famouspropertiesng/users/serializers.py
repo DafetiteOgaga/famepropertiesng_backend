@@ -10,7 +10,8 @@ class UserSerializer(serializers.ModelSerializer):
 class ResponseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'middle_name',
-					'email', 'phone', 'address', 'username', 'is_staff'
-					,'is_superuser'
+        fields = ['id', 'first_name', 'last_name', 'email',
+                'mobile_no', 'address', 'username', 'is_staff'
+				,'city','state','country', 'image_url','fileId',
+                'nearest_bus_stop','phoneCode','stateCode'
     ]  # Exclude sensitive fields like password

@@ -3,23 +3,22 @@ from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class User(AbstractUser):
-	middle_name = models.CharField(max_length=100, null=True, blank=True)
+	# middle_name = models.CharField(max_length=100, null=True, blank=True)
 	email = models.EmailField(max_length=200, unique=True)
-	phone = models.CharField(max_length=20)
-	# wphone = models.CharField(max_length=15)
+	mobile_no = models.CharField(max_length=20)
 	address = models.CharField(max_length=200)
-	username = models.CharField(max_length=30, unique=True)
+	city = models.CharField(max_length=100, null=True, blank=True)
+	state = models.CharField(max_length=100, null=True, blank=True)
+	country = models.CharField(max_length=100, null=True, blank=True)
+	# profile picture fields
+	image_url = models.URLField(blank=True, null=True)  # only store ImageKit URL
+	fileId = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+
+	nearest_bus_stop = models.CharField(max_length=200, null=True, blank=True)
+	phoneCode = models.CharField(max_length=10, null=True, blank=True)
+	stateCode = models.CharField(max_length=10, null=True, blank=True)
+	username = models.CharField(max_length=30, null=True, blank=True)
 	password = models.CharField(max_length=128, null=True, blank=True)
-	# gender = models.CharField(max_length=50, null=True, blank=True)
-	# dob = models.DateField(null=True, blank=True)
-	# role = models.CharField(max_length=500, null=True, blank=True)
-	## region =  models.ForeignKey(Region, on_delete=models.PROTECT, null=True, blank=True)
-	# state = models.ForeignKey(State, on_delete=models.PROTECT, blank=True, null=True)
-	# location = models.ForeignKey(Location, on_delete=models.PROTECT, blank=True, null=True)
-	# deliveries = models.IntegerField(default=0)
-	# pendings = models.IntegerField(default=0)
-	# profile_picture = models.ImageField(upload_to=unique_profile_pic, null=True, blank=True)
-	# aboutme = models.TextField(null=True, blank=True)
 	is_deleted = models.BooleanField(default=False)
 	class Meta:
 		ordering = ['id']

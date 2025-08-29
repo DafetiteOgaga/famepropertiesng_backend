@@ -144,8 +144,21 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         # add user info to response
         data["user"] = ResponseUserSerializer(user).data
         # data["rot"] = "21"
-
         return response
+
+@api_view(['GET'])
+def check_email(request, email):
+    print(f'Checking email: {email}')
+    exist = {
+        "boolValue": True,
+        "message": "Email is available.",
+        "color": "green"
+    }
+    user = User.objects.filter(email=email)
+    if user:
+        exist["message"] = "Email is taken."
+        exist["color"] = "#BC4B51"
+    return Response(exist, status=status.HTTP_200_OK)
 
 # @api_view(['POST', 'GET'])
 # @csrf_exempt

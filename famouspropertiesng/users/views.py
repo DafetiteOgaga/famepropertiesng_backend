@@ -5,6 +5,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import *
 from .serializers import ResponseUserSerializer
+import json
+from hooks.prettyprint import pretty_print_json
 # from app_bank.models import *
 # from app_bank.serializers import *
 # from app_location.models import Location
@@ -13,39 +15,69 @@ from .serializers import ResponseUserSerializer
 # from django.contrib.auth import authenticate, login, logout, get_user_model
 # User = get_user_model()
 
-# Create your views here.
-@api_view(['GET'])
-def users(request, pk=None):
-	users_list = User.objects.all()
-	print(f'Users List: {users_list}')
-	if pk:
-		user = get_object_or_404(User, pk=pk)
-		user_data = {
-			f"user-{pk}": [
-				{
-					"id": user.id,
-					"username": user.username,
-					"email": user.email,
-				}
-			]
-		}
-	else:
-		user_data = {
-			"all users":
-			[
-				{
-					"id": user.id,
-					"username": user.username,
-					"email": user.email,
-				}
-				for user in users_list
-				]
-		}
-	return Response(user_data, status=status.HTTP_200_OK)
+allowed_fields = [
+	"address"
+	"city"
+	"country"
+	"email",
+	"first_name",
+	"last_name",
+	"mobile_no",
+	"nearest_bus_stop",
+	"password",
+	"phoneCode",
+	"state",
+	"stateCode",
+	"username",
+	"image_url",
+	"fileId",
+]
 
-@api_view(['GET'])
-def allUsers(request):
-	users = User.objects.all()
-	users_serializer = ResponseUserSerializer(users, many=True).data
-	# print(f'All Users: {users_serializer}')
-	return Response({"allUsers": users_serializer}, status=status.HTTP_200_OK)
+# Create your views here.
+@api_view(['GET', 'POST'])
+def users(request, pk=None):
+	if request.method == 'POST':
+		data = json.loads(request.body)
+		print(f"Received data for new user:")
+		pretty_print_json(data)
+
+		user_data = {field: data.get(field) for field in allowed_fields if field in data}
+
+		print(f"Filtered user data to be saved:")
+		pretty_print_json(user_data)
+
+		checkEmail = data.get("email")
+		user_exists = User.objects.filter(email=checkEmail).exists()
+		if user_exists:
+			return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+		password = data.pop("password", None)  # remove password from dict if present
+		new_user = User.objects.create(**user_data)
+
+		if password:
+			new_user.set_password(password)
+			# print(f"Hashed password (before saving): {new_user.password}")
+			new_user.save()
+
+		created_user_data = ResponseUserSerializer(new_user).data
+
+		return Response(created_user_data, status=status.HTTP_201_CREATED)
+	else:
+		if pk:
+			user = User.objects.filter(pk=pk)
+			print(f'User: {user}')
+			if not user.exists():
+				return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+			user_data = ResponseUserSerializer(user.first()).data
+		else:
+			users_list = User.objects.all()
+			print(f'Users List: {users_list}')
+			user_data = ResponseUserSerializer(users_list, many=True).data
+		return Response(user_data, status=status.HTTP_200_OK)
+
+# @api_view(['GET'])
+# def allUsers(request):
+# 	users = User.objects.all()
+# 	users_serializer = ResponseUserSerializer(users, many=True).data
+# 	# print(f'All Users: {users_serializer}')
+# 	return Response({"allUsers": users_serializer}, status=status.HTTP_200_OK)
