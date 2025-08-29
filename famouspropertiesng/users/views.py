@@ -56,11 +56,14 @@ def users(request, pk=None):
 
 		checkEmail = data["email"]
 		print(f"Checking email: {checkEmail}")
+
+		# return Response({"error": "Email is taken."}, status=status.HTTP_400_BAD_REQUEST)
+
 		user_exists = User.objects.filter(email=checkEmail).exists()
 		print(f"User exists query result: {user_exists}")
 		if user_exists:
 			print("User with this email exists.")
-			return Response({"error": "Email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+			return Response({"error": "Email is Taken."}, status=status.HTTP_400_BAD_REQUEST)
 		print("Email is unique, proceeding to create user.")
 
 		password = user_data.pop("password", None)  # remove password from dict if present
