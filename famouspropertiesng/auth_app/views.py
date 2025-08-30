@@ -151,14 +151,15 @@ def check_email(request, email):
     print(f'Checking email: {email}')
     exist = {
         "boolValue": True,
-        "message": f"{email} is available.",
         "color": "green",
-        # "email": email
     }
+    msg = "available"
     user = User.objects.filter(email=email)
     if user:
-        exist["message"] = "Email is taken."
+        msg = "taken"
         exist["color"] = "#BC4B51"
+    exist["message"] = f"{email} is {msg}."
+    # pretty_print_json(exist)
     return Response(exist, status=status.HTTP_200_OK)
 
 # @api_view(['POST', 'GET'])
