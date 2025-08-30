@@ -151,8 +151,9 @@ def check_email(request, email):
     print(f'Checking email: {email}')
     exist = {
         "boolValue": True,
-        "message": "Email is available.",
-        "color": "green"
+        "message": f"{email} is available.",
+        "color": "green",
+        # "email": email
     }
     user = User.objects.filter(email=email)
     if user:
