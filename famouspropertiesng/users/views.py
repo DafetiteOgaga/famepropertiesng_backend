@@ -44,12 +44,13 @@ def users(request, pk=None):
 		# user_data = {field: data.get(field) for field in allowed_fields if field in data}
 		user_data = {}
 		data_keys = data.keys()
-		print(f"Data keys: {data_keys}")
+		# print(f"Data keys: {data_keys}")
+		print()
 		for field in allowed_fields:
 			if field in data_keys:
 				user_data[field] = data[field]
 			else:
-				print(f"Field '{field}' not in received data.")
+				print(f"🚫 Field '{field}' not in received data.")
 
 		print(f"Filtered user data to be saved:")
 		pretty_print_json(user_data)
@@ -60,7 +61,7 @@ def users(request, pk=None):
 		# return Response({"error": "Email is taken."}, status=status.HTTP_400_BAD_REQUEST)
 
 		user_exists = User.objects.filter(email=checkEmail).exists()
-		print(f"User exists query result: {user_exists}")
+		# print(f"User exists query result: {user_exists}")
 		if user_exists:
 			print("User with this email exists.")
 			return Response({"error": "Email is Taken."}, status=status.HTTP_400_BAD_REQUEST)
@@ -75,6 +76,10 @@ def users(request, pk=None):
 			new_user.save()
 
 		created_user_data = ResponseUserSerializer(new_user).data
+
+		print()
+		print(f"Created new user:")
+		pretty_print_json(created_user_data)
 
 		return Response(created_user_data, status=status.HTTP_201_CREATED)
 	else:
