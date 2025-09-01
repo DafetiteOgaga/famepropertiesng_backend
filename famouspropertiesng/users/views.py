@@ -31,6 +31,28 @@ allowed_fields = [
 	"username",
 	"image_url",
 	"fileId",
+	"countryId",
+	"stateId",
+	"cityId",
+]
+
+allowed_update_fields = [
+	"address",
+	"city",
+	"country",
+	"last_name",
+	"mobile_no",
+	"nearest_bus_stop",
+	"password",
+	"phoneCode",
+	"state",
+	"stateCode",
+	"username",
+	"image_url",
+	"fileId",
+	"countryId",
+	"stateId",
+	"cityId",
 ]
 
 # Create your views here.
@@ -95,6 +117,42 @@ def users(request, pk=None):
 			user_data = ResponseUserSerializer(users_list, many=True).data
 		return Response(user_data, status=status.HTTP_200_OK)
 
+@api_view(['POST'])
+def updateUser(request, pk):
+	if request.method == 'POST':
+		print(f"Update request for user ID: {pk}")
+		try:
+			user = User.objects.get(pk=pk)
+		except User.DoesNotExist:
+			return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+		# return Response({"ok": "Yippy it worked!."}, status=status.HTTP_201_CREATED)
+
+		data = json.loads(request.body)
+		print(f"Received data for updating user {pk}:")
+		pretty_print_json(data)
+
+		# Update only allowed fields
+		update_fields = {}
+		data_keys = data.keys()
+		for field in allowed_update_fields:
+			if field in data_keys:
+				update_fields[field] = data[field]
+
+		if 'password' in update_fields:
+			password = update_fields.pop('password')
+			user.set_password(password)
+
+		for field, value in update_fields.items():
+			setattr(user, field, value)
+
+		user.save()
+		updated_user_data = ResponseUserSerializer(user).data
+
+		print()
+		print(f"Updated user {pk}:")
+		pretty_print_json(updated_user_data)
+
+		return Response(updated_user_data, status=status.HTTP_200_OK)
 # @api_view(['GET'])
 # def allUsers(request):
 # 	users = User.objects.all()
