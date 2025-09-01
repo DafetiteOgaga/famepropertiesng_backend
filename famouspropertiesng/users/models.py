@@ -7,9 +7,18 @@ class User(AbstractUser):
 	email = models.EmailField(max_length=200, unique=True)
 	mobile_no = models.CharField(max_length=20)
 	address = models.CharField(max_length=200)
+
+	# location fields
+	# city
 	city = models.CharField(max_length=100, null=True, blank=True)
+	cityId = models.IntegerField(null=True, blank=True)
+	# state
 	state = models.CharField(max_length=100, null=True, blank=True)
+	stateId = models.IntegerField(null=True, blank=True)
+	# country
 	country = models.CharField(max_length=100, null=True, blank=True)
+	countryId = models.IntegerField(null=True, blank=True)
+
 	# profile picture fields
 	image_url = models.URLField(blank=True, null=True)  # only store ImageKit URL
 	fileId = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
