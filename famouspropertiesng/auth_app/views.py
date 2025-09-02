@@ -55,25 +55,27 @@ def google_login(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST', 'GET'])
-def generate_signature(request):
-    timestamp = str(int(time.time()))
+# @api_view(['POST', 'GET'])
+# def generate_signature(request):
+#     print("Generating ImageKit signature (generate_signature)...")
+#     timestamp = str(int(time.time()))
     
-    signature = hmac.new(
-        settings.IMAGEKIT_PRIVATE_KEY.encode(),
-        timestamp.encode(),
-        hashlib.sha1
-    ).hexdigest()
+#     signature = hmac.new(
+#         settings.IMAGEKIT_PRIVATE_KEY.encode(),
+#         timestamp.encode(),
+#         hashlib.sha1
+#     ).hexdigest()
 
-    return JsonResponse({
-        "signature": signature,
-        "expire": timestamp,
-        "token": settings.IMAGEKIT_PUBLIC_KEY
-    })
-    # return JsonResponse({"true": "true"})
+#     return JsonResponse({
+#         "signature": signature,
+#         "expire": timestamp,
+#         "token": settings.IMAGEKIT_PUBLIC_KEY
+#     })
+#     # return JsonResponse({"true": "true"})
 
 @api_view(['POST', 'GET'])
 def imagekit_auth(request):
+    print("Generating ImageKit auth token (imagekit_auth)...")
     token = str(int(time.time()))
     expire = str(int(time.time()) + 2400)  # 40 minutes (more reasonable)
     

@@ -5,8 +5,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import *
 from .serializers import ResponseUserSerializer
-import json
+import json, requests, base64
 from hooks.prettyprint import pretty_print_json
+from django.conf import settings
 # from app_bank.models import *
 # from app_bank.serializers import *
 # from app_location.models import Location
@@ -54,6 +55,10 @@ allowed_update_fields = [
 	"stateId",
 	"cityId",
 ]
+
+def get_basic_auth_header():
+	token = base64.b64encode(f"{settings.IMAGEKIT_PRIVATE_KEY}:".encode()).decode()
+	return {"Authorization": f"Basic {token}"}
 
 # Create your views here.
 @api_view(['GET', 'POST'])
@@ -120,16 +125,79 @@ def users(request, pk=None):
 @api_view(['POST'])
 def updateUser(request, pk):
 	if request.method == 'POST':
-		print(f"Update request for user ID: {pk}")
+		# print(f"Update request for user ID: {pk}")
+		# print(f"Request body: {request.body}")  # raw request body
+		# print(f"Request.FILES: {request.FILES}")  # uploaded files
+		# print(f"Request.POST: {request.POST}")  # form fields
+
+		# file = request.FILES.get("file")
+		data = json.loads(request.body)
+
+		old_file_id = data.get("old_fileId")
+		print(f"Received old_file_id: {old_file_id}")
+		# print(f"Received file: {file}, type: {type(file)}")
+
+		# print("File uploaded successfully.")
+		# return Response({"result": "all goog"}, status=status.HTTP_201_CREATED)
+
+		# if not file_id:
+		# 	print("fileId is missing in the request.")
+		# 	return Response({"error": "fileId is required"}, status=400)
+		# if not file:
+		# 	print("No file uploaded in the request.")
+		# 	return Response({"error": "No file uploaded"}, status=400)
+
+		if old_file_id:
+			# First, delete the old file using fileId
+			print(f"Attempting to delete old file with ID: {old_file_id}")
+			delete_url = f"https://api.imagekit.io/v1/files/{old_file_id}"
+			del_resp = requests.delete(delete_url, headers=get_basic_auth_header())
+
+			if not str(del_resp.status_code).startswith('2'):
+				print(f"delete status code: {del_resp.status_code}")
+				print(f"Failed to delete old file: {del_resp.text}")
+				return Response({"error": "Failed to delete old file", "detail": del_resp.text}, status=del_resp.status_code)
+			print(f"delete status code: {del_resp.status_code}")
+			print("Old file deleted successfully.")
+
+			# Now, upload the new file
+			# upload_url = "https://upload.imagekit.io/api/v1/files/upload"
+			# files = {
+			# 	"file": (file.name, file.read(), file.content_type),
+			# }
+			# data = {
+			# 	"fileName": file.name,
+			# 	"useUniqueFileName": False,  # overwrite by filename
+			# }
+
+			# upload_resp = requests.post(upload_url, files=files, data=data, headers=get_basic_auth_header())
+
+			# try:
+			# 	print(f"Upload response: {upload_resp.text}")
+			# 	result = upload_resp.json()
+			# except ValueError:
+			# 	print(f"Failed to parse JSON response: {upload_resp.text}")
+			# 	return Response({"error": "Invalid JSON response", "detail": upload_resp.text}, status=upload_resp.status_code)
+
+			# if upload_resp.status_code != 200:
+			# 	print(f"File upload failed: {result}")
+			# 	return Response({"error": "File upload failed", "detail": result}, status=upload_resp.status_code)
+			# print("File uploaded successfully.")
+			# return Response(result, status=upload_resp.status_code)
+
+		# print("No file uploaded, proceeding with other updates.")
+		# return Response({"ok": "Yippy it worked!."}, status=status.HTTP_201_CREATED)
+
+		# data = request.POST.dict() if request.FILES else json.loads(request.body)
+
+		# data = json.loads(request.body)
+		print(f"Received data for updating user {pk}:")
+		pretty_print_json(data)
+
 		try:
 			user = User.objects.get(pk=pk)
 		except User.DoesNotExist:
 			return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-		# return Response({"ok": "Yippy it worked!."}, status=status.HTTP_201_CREATED)
-
-		data = json.loads(request.body)
-		print(f"Received data for updating user {pk}:")
-		pretty_print_json(data)
 
 		# Update only allowed fields
 		update_fields = {}
@@ -153,9 +221,21 @@ def updateUser(request, pk):
 		pretty_print_json(updated_user_data)
 
 		return Response(updated_user_data, status=status.HTTP_200_OK)
-# @api_view(['GET'])
-# def allUsers(request):
-# 	users = User.objects.all()
-# 	users_serializer = ResponseUserSerializer(users, many=True).data
-# 	# print(f'All Users: {users_serializer}')
-# 	return Response({"allUsers": users_serializer}, status=status.HTTP_200_OK)
+
+# @api_view(["POST"])
+# def upload_to_imagekit(request):
+#     file = request.FILES.get("file")  # get file from React formData
+#     if not file:
+#         return Response({"error": "No file uploaded"}, status=400)
+
+#     url = "https://upload.imagekit.io/api/v1/files/upload"
+#     headers = {
+#         "Authorization": "Basic " + (settings.IMAGEKIT_PRIVATE_KEY + ":").encode("ascii").decode("latin1")
+#     }
+#     files = {
+#         "file": file,  
+#         "fileName": file.name,
+#     }
+
+#     response = requests.post(url, files=files, headers=headers)
+#     return Response(response.json(), status=response.status_code)
