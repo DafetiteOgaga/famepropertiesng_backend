@@ -14,5 +14,6 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'mobile_no', 'address', 'username', 'is_staff',
                 'city','state','country', 'image_url','fileId',
                 'nearest_bus_stop','phoneCode','stateCode',
-                'countryId','stateId','cityId'
+                'countryId','stateId','cityId', 'hasCities',
+                'hasStates',
     ]  # Exclude sensitive fields like password
