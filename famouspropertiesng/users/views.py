@@ -3,7 +3,7 @@ from django.shortcuts import render, get_list_or_404, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import *
+from .models import User
 from .serializers import ResponseUserSerializer
 import json, requests, base64
 from hooks.prettyprint import pretty_print_json
@@ -35,6 +35,8 @@ allowed_fields = [
 	"countryId",
 	"stateId",
 	"cityId",
+	"hasCities",
+	"hasStates",
 ]
 
 allowed_update_fields = [
@@ -54,6 +56,8 @@ allowed_update_fields = [
 	"countryId",
 	"stateId",
 	"cityId",
+	"hasCities",
+	"hasStates",
 ]
 
 def get_basic_auth_header():
