@@ -15,9 +15,11 @@ class User(AbstractUser):
 	# state
 	state = models.CharField(max_length=100, null=True, blank=True)
 	stateId = models.IntegerField(null=True, blank=True)
+	hasCities = models.BooleanField(default=False)
 	# country
 	country = models.CharField(max_length=100, null=True, blank=True)
 	countryId = models.IntegerField(null=True, blank=True)
+	hasStates = models.BooleanField(default=False)
 
 	# profile picture fields
 	image_url = models.URLField(blank=True, null=True)  # only store ImageKit URL
