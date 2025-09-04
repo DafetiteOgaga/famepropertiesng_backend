@@ -1,10 +1,13 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Product
+from .serializers import ProductSerializer
 from hooks.deleteImage import delete_image
+from hooks.prettyprint import pretty_print_json
 
 # Create your views here.
 @api_view(['POST', 'GET'])
@@ -26,51 +29,23 @@ def products(request, pk=None):
 			fileId=data.get("fileId"),  # Store the ImageKit fileId if needed
 		)
 
-		return JsonResponse({
-			"id": product.id,
-			"name": product.name,
-			"description": product.description,
-			"fullDescription": product.fullDescription,
-			"marketPrice": str(product.marketPrice),  # Convert Decimal to string for JSON serialization
-			"discountPrice": str(product.discountPrice),  # Convert Decimal to string for JSON serialization
-			"image_url": product.image_url,
-			"fileId": product.fileId,  # Include fileId in the response if needed
-			"sold": product.sold,  # Include sold status if needed
-			"noOfReviewers": str(product.noOfReviewers),  # Convert Decimal to string for JSON serialization
-		}, status=201)
+		serialized_product = ProductSerializer(product).data
+		return Response(serialized_product, status=201)
+
 	elif request.method == "GET":
+		serialized_product = None
 		if pk:
 			product = Product.objects.get(pk=pk)
 			print(f"Fetched single product")
-			product_data = {
-				"id": product.id,
-				"name": product.name,
-				"description": product.description,
-				"fullDescription": product.fullDescription,
-				"marketPrice": str(product.marketPrice),  # Convert Decimal to string for JSON serialization
-				"discountPrice": str(product.discountPrice),  # Convert Decimal to string for JSON serialization
-				"image_url": product.image_url,
-				"fileId": product.fileId,  # Include fileId in the response if needed
-				"sold": product.sold,  # Include sold status if needed
-				"noOfReviewers": str(product.noOfReviewers),  # Convert Decimal to string for JSON serialization
-			}
+			serialized_product = ProductSerializer(product).data
+			pretty_print_json(serialized_product)
 		else:
 			products = Product.objects.all()
 			print(f"Fetched {products.count()} products")
-			product_data = [{
-				"id": product.id,
-				"name": product.name,
-				"description": product.description,
-				"fullDescription": product.fullDescription,
-				"marketPrice": str(product.marketPrice),  # Convert Decimal to string for JSON serialization
-				"discountPrice": str(product.discountPrice),  # Convert Decimal to string for JSON serialization
-				"image_url": product.image_url,
-				"fileId": product.fileId,  # Include fileId in the response if needed
-				"sold": product.sold,  # Include sold status if needed
-				"noOfReviewers": str(product.noOfReviewers),  # Convert Decimal to string for JSON serialization
-			} for product in products]
+			serialized_product = ProductSerializer(products, many=True).data
+			pretty_print_json(serialized_product)
 
-		return JsonResponse(product_data, safe=False, status=200)
+		return Response(serialized_product, status=200)
 
 @csrf_exempt
 @api_view(['POST'])
