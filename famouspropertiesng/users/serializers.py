@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-from productrating.serializers import ProductRatingSerializer
+from productrating.serializers import ProductRatingSerializer, SomeProductRatingSerializer
 
 # Create your serializers here.
 class UserSerializer(serializers.ModelSerializer):
@@ -20,7 +20,7 @@ class ResponseUserSerializer(serializers.ModelSerializer):
     ]
 
 class UserSerializerWRatings(serializers.ModelSerializer):
-    product_ratings = ProductRatingSerializer(many=True, read_only=True)
+    product_ratings = SomeProductRatingSerializer(many=True, read_only=True)
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email',

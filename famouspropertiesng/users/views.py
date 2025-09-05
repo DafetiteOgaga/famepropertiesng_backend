@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import User
-from .serializers import ResponseUserSerializer
+from .serializers import UserSerializerWRatings
 import json, requests, base64
 from hooks.prettyprint import pretty_print_json
 from django.conf import settings
@@ -106,7 +106,7 @@ def users(request, pk=None):
 			# print(f"Hashed password (before saving): {new_user.password}")
 			new_user.save()
 
-		created_user_data = ResponseUserSerializer(new_user).data
+		created_user_data = UserSerializerWRatings(new_user).data
 
 		print()
 		print(f"Created new user:")
@@ -119,11 +119,11 @@ def users(request, pk=None):
 			print(f'User: {user}')
 			if not user.exists():
 				return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-			user_data = ResponseUserSerializer(user.first()).data
+			user_data = UserSerializerWRatings(user.first()).data
 		else:
 			users_list = User.objects.all()
 			print(f'Users List: {users_list}')
-			user_data = ResponseUserSerializer(users_list, many=True).data
+			user_data = UserSerializerWRatings(users_list, many=True).data
 		return Response(user_data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -218,7 +218,7 @@ def updateUser(request, pk):
 			setattr(user, field, value)
 
 		user.save()
-		updated_user_data = ResponseUserSerializer(user).data
+		updated_user_data = UserSerializerWRatings(user).data
 
 		print()
 		print(f"Updated user {pk}:")
