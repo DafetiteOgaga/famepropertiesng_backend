@@ -6,3 +6,11 @@ class ProductRatingSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = ProductRating
 		fields = '__all__'  # or list only fields you want
+
+class SomeProductRatingSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = ProductRating
+		fields = [
+			'id', 'product', 'liked'
+		]  # 'user', 'created_at', 'updated_at',
+			# 'review', 'rating'
