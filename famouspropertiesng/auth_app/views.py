@@ -14,7 +14,7 @@ from django.http import JsonResponse
 from django.conf import settings
 from rest_framework_simplejwt.views import TokenObtainPairView
 # from django.forms.models import model_to_dict
-from users.serializers import UserSerializer, ResponseUserSerializer
+from users.serializers import UserSerializerWRatings
 # from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -144,7 +144,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         # del data["refresh"]
 
         # add user info to response
-        data["user"] = ResponseUserSerializer(user).data
+        data["user"] = UserSerializerWRatings(user).data
         # data["rot"] = "21"
         return response
 
