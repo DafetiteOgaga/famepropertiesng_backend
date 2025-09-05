@@ -19,6 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # For featuressadvert configuration
+    path('', include('productrating.urls')),     # For productrating configuration
     path('maillist/', include('maillist.urls')),     # For maillist configuration
     path('', include('products.urls')),     # For products configuration
     path('', include('featuresadvert.urls')),     # For featuresadvert configuration

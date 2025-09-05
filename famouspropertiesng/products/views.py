@@ -15,7 +15,7 @@ from hooks.prettyprint import pretty_print_json
 def products(request, pk=None):
 	if request.method == "POST":
 		data = json.loads(request.body)
-		print(f"Received product data: {data}")
+		# print(f"Received product data: {data}")
 
 		# data contains info from React, including the uploaded image URL
 		product = Product.objects.create(
@@ -38,12 +38,12 @@ def products(request, pk=None):
 			product = Product.objects.get(pk=pk)
 			print(f"Fetched single product")
 			serialized_product = ProductSerializer(product).data
-			pretty_print_json(serialized_product)
+			# pretty_print_json(serialized_product)
 		else:
 			products = Product.objects.all()
 			print(f"Fetched {products.count()} products")
 			serialized_product = ProductSerializer(products, many=True).data
-			pretty_print_json(serialized_product)
+			# pretty_print_json(serialized_product)
 
 		return Response(serialized_product, status=200)
 

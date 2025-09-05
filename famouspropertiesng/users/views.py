@@ -243,3 +243,9 @@ def updateUser(request, pk):
 
 #     response = requests.post(url, files=files, headers=headers)
 #     return Response(response.json(), status=response.status_code)
+
+@api_view(['GET'])
+def totalUsers(request):
+	if request.method == 'GET':
+		total = User.objects.count()
+		return Response({"total_users": total}, status=status.HTTP_200_OK)

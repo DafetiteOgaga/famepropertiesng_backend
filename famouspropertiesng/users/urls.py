@@ -8,5 +8,5 @@ urlpatterns = [
 	path('', view=views.users, name='users'),
     path('<int:pk>/', view=views.users, name='userDetail'),
     path('update-profile/<int:pk>/', view=views.updateUser, name='updateUser'),
-    # path('all-users/', view=views.allUsers, name='allUsers'),
+    path('total-users/', view=views.totalUsers, name='totalUsers'),
 ]
