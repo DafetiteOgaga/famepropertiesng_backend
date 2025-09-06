@@ -49,7 +49,7 @@ def products(request, pk=None):
 			# serialized_product = ProductSerializer(products, many=True).data
 			# # pretty_print_json(serialized_product)
 			# Otherwise paginate the queryset
-			qs = Product.objects.all().order_by('-id') # stable ordering
+			qs = Product.objects.all().order_by('id') # from oldest to newest
 
 			paginator = PageNumberPagination() # DRF paginator
 			paginator.page_size = 8 # default page size
