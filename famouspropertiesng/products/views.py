@@ -15,6 +15,7 @@ from rest_framework.pagination import PageNumberPagination
 @csrf_exempt
 def products(request, pk=None, all=None):
 	if request.method == "POST":
+		print("Creating new product...")
 		data = json.loads(request.body)
 		# print(f"Received product data: {data}")
 
@@ -35,6 +36,8 @@ def products(request, pk=None, all=None):
 
 	elif request.method == "GET":
 		print(f"Received GET request for products, pk={pk}")
+		print(f'fetch all param: {all}')
+		# If pk is provided, fetch that specific product
 		serialized_product = None
 		if pk:
 			product = Product.objects.get(pk=pk)
