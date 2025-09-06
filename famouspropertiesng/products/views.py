@@ -13,7 +13,7 @@ from rest_framework.pagination import PageNumberPagination
 # Create your views here.
 @api_view(['POST', 'GET'])
 @csrf_exempt
-def products(request, pk=None):
+def products(request, pk=None, all=None):
 	if request.method == "POST":
 		data = json.loads(request.body)
 		# print(f"Received product data: {data}")
@@ -45,19 +45,24 @@ def products(request, pk=None):
 		else:
 			# Otherwise paginate the queryset
 			qs = Product.objects.all().order_by('id') # from oldest to newest
+			if all == 'all':
+				print("Fetching all products without pagination")
+				serialized_product = ProductSerializer(qs, many=True).data
+				return Response(serialized_product, status=200)
+			else:
+				print("Fetching paginated products")
+				paginator = PageNumberPagination() # DRF paginator
+				paginator.page_size = 8 # default page size
 
-			paginator = PageNumberPagination() # DRF paginator
-			paginator.page_size = 8 # default page size
+				# allow client to set page size using `?page_size=...` query param
+				paginator.page_size_query_param = 'page_size' # allow request for page size by users e.g ?page_size=...
+				paginator.max_page_size = 100 # safety cap for page size request
 
-			# allow client to set page size using `?page_size=...` query param
-			paginator.page_size_query_param = 'page_size' # allow request for page size by users e.g ?page_size=...
-			paginator.max_page_size = 100 # safety cap for page size request
-
-			page = paginator.paginate_queryset(qs, request) # get page's items
-			serializer = ProductSerializer(page, many=True).data # serialize page
-			response = paginator.get_paginated_response(serializer)
-			response.data["total_pages"] = paginator.page.paginator.num_pages
-			return response
+				page = paginator.paginate_queryset(qs, request) # get page's items
+				serializer = ProductSerializer(page, many=True).data # serialize page
+				response = paginator.get_paginated_response(serializer)
+				response.data["total_pages"] = paginator.page.paginator.num_pages
+				return response
 
 
 @csrf_exempt
