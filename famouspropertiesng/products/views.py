@@ -43,11 +43,6 @@ def products(request, pk=None):
 			# pretty_print_json(serialized_product)
 			return Response(serialized_product, status=200)
 		else:
-			# total_pages = 
-			# products = Product.objects.all()
-			# print(f"Fetched {products.count()} products")
-			# serialized_product = ProductSerializer(products, many=True).data
-			# # pretty_print_json(serialized_product)
 			# Otherwise paginate the queryset
 			qs = Product.objects.all().order_by('id') # from oldest to newest
 
@@ -61,24 +56,7 @@ def products(request, pk=None):
 			page = paginator.paginate_queryset(qs, request) # get page's items
 			serializer = ProductSerializer(page, many=True).data # serialize page
 			response = paginator.get_paginated_response(serializer)
-			# serializer["total_pages"] = 4
 			response.data["total_pages"] = paginator.page.paginator.num_pages
-			# page_range = str(paginator.page.paginator.page_range).split('range').pop().lstrip('(').rstrip(')')
-			# prange = page_range.split(',')
-			# start_index = prange[0]
-			# end_index = prange[1]
-			# print(f"page_range: {page_range}")
-			# print(f'start_index: {start_index}\nend_index: {end_index}')
-			# response.data["page_range"] = page_range
-			# response.data["start_index"] = start_index
-			# response.data["end_index"] = end_index
-			# response.data["total_pages"] = paginator.page.paginator.num_pages
-			# response.data["total_pages"] = paginator.page.paginator.num_pages
-			# response.data["total_pages"] = paginator.page.paginator.num_pages
-			# print(f"Total pages: {response.data['total_pages']}")
-			# pretty_print_json(response.data)
-			# print(f"page: {paginator.page.__dir__()}")
-			# print(f"paginator: {paginator.page.end_index()}")
 			return response
 
 
