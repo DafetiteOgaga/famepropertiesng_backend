@@ -14,6 +14,14 @@ class Product(models.Model):
     fileId = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
     sold = models.BooleanField(default=False)  # Indicates if the product is sold
     noOfReviewers = models.IntegerField(default=0)
+    store = models.ForeignKey(
+        'store.Store',                 # Link to Store model
+        on_delete=models.CASCADE,      # If store is deleted, delete its products
+        related_name="rn_products",    # Access with store.products
+        null=True, # remove later      # A product can exist without a store
+    )
+    
+    ##### add a many-to-many relationship to the Category model (a product can belong to many categories and vice versa)
 
     def __str__(self):
         return self.name
