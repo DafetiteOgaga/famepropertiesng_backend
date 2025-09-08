@@ -59,7 +59,7 @@ def google_login(request):
 # def generate_signature(request):
 #     print("Generating ImageKit signature (generate_signature)...")
 #     timestamp = str(int(time.time()))
-    
+
 #     signature = hmac.new(
 #         settings.IMAGEKIT_PRIVATE_KEY.encode(),
 #         timestamp.encode(),
