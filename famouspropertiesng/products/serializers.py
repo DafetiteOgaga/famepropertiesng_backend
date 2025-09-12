@@ -1,10 +1,12 @@
 from rest_framework import serializers
 from .models import *
-from productrating.serializers import ProductRatingSerializer
+from productrating.serializers import SomeProductRatingSerializer
+from store.serializers import StoreSerializer
 
 # Create your serializers here.
 class ProductSerializer(serializers.ModelSerializer):
-	prod_ratings = ProductRatingSerializer(many=True, read_only=True)
+	store = StoreSerializer(read_only=True)
+	prod_ratings = SomeProductRatingSerializer(source='rn_prod_ratings', many=True, read_only=True)
 	total_liked = serializers.SerializerMethodField()
 	total_reviewed = serializers.SerializerMethodField()
 	class Meta:
@@ -12,7 +14,7 @@ class ProductSerializer(serializers.ModelSerializer):
 		fields = '__all__'
 
 	def get_total_liked(self, obj):
-		return obj.prod_ratings.filter(liked=True).count()
+		return obj.rn_prod_ratings.filter(liked=True).count()
 
 	def get_total_reviewed(self, obj):
-		return obj.prod_ratings.count()
+		return obj.rn_prod_ratings.count()
