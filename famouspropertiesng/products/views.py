@@ -18,6 +18,8 @@ def products(request, pk=None, all=None):
 		print("Creating new product...")
 		data = json.loads(request.body)
 		# print(f"Received product data: {data}")
+		pretty_print_json(data)
+		return Response({"ok": "all good"}, status=201)
 
 		# data contains info from React, including the uploaded image URL
 		product = Product.objects.create(
