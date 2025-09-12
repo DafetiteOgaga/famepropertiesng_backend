@@ -8,10 +8,18 @@ class Product(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     fullDescription = models.TextField()
+    technicalDescription = models.TextField(null=True, blank=True)
+    marketingDescription = models.TextField(null=True, blank=True)
     marketPrice = models.DecimalField(max_digits=10, decimal_places=2)
     discountPrice = models.DecimalField(max_digits=10, decimal_places=2)
-    image_url = models.URLField(blank=True, null=True)  # only store ImageKit URL
-    fileId = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+    image_url_0 = models.URLField(blank=True, null=True)  # only store ImageKit URL
+    fileId_0 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+    image_url_1 = models.URLField(blank=True, null=True)  # only store ImageKit URL
+    fileId_1 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+    image_url_2 = models.URLField(blank=True, null=True)  # only store ImageKit URL
+    fileId_2 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+    image_url_3 = models.URLField(blank=True, null=True)  # only store ImageKit URL
+    fileId_3 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
     sold = models.BooleanField(default=False)  # Indicates if the product is sold
     noOfReviewers = models.IntegerField(default=0)
     store = models.ForeignKey(
