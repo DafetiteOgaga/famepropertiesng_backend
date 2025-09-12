@@ -31,6 +31,9 @@ class User(AbstractUser):
 	username = models.CharField(max_length=30, null=True, blank=True)
 	password = models.CharField(max_length=128, null=True, blank=True)
 	is_deleted = models.BooleanField(default=False)
+
+	# for sellers on the app
+	is_seller = models.BooleanField(default=False)
 	class Meta:
 		ordering = ['id']
 
