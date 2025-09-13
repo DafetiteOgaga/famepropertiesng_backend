@@ -52,10 +52,11 @@ def productRating(request, pk=None):
 		serialized_product_rating = None
 		if pk:
 			try:
-				user = User.objects.prefetch_related('product_ratings').get(pk=pk)
+				user = User.objects.get(pk=pk)
 				user_serialized = UserSerializerWRatings(user).data
 				print(f"Fetched user with product ratings:")
-				print(user.product_ratings.all())
+				# print(user.rn_product_ratings.all())
+				pretty_print_json(user_serialized)
 				# product_rating = ProductRating.objects.get(pk=pk)
 				# print(f"Fetched single product rating")
 				# serialized_product_rating = ProductRatingSerializer(product_rating).data
