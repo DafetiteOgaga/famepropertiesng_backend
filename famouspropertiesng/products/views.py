@@ -5,10 +5,19 @@ from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Product
+from django.db import transaction
 from .serializers import ProductSerializer
 from hooks.deleteImage import delete_image
 from hooks.prettyprint import pretty_print_json
 from rest_framework.pagination import PageNumberPagination
+
+valid_product_fields = [
+	"name", "description", "fullDescription", "technicalDescription",
+	"marketingDescription", "marketPrice", "discountPrice",
+	"image_url_0", "fileId_0", "image_url_1", "fileId_1",
+	"image_url_2", "fileId_2", "image_url_3", "fileId_3",
+	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store"
+]
 
 # Create your views here.
 @api_view(['POST', 'GET'])
@@ -19,22 +28,99 @@ def products(request, pk=None, all=None):
 		data = json.loads(request.body)
 		# print(f"Received product data: {data}")
 		pretty_print_json(data)
-		return Response({"ok": "all good"}, status=201)
+		# return Response({"ok": "all good"}, status=201)
 
-		# data contains info from React, including the uploaded image URL
-		product = Product.objects.create(
-			name=data.get("name"),
-			description=data.get("description"),
-			fullDescription=data.get("fullDescription"),
-			marketPrice=data.get("marketPrice"),
-			discountPrice=data.get("discountPrice"),
-			noOfReviewers=data.get("noOfReviewers"),
-			image_url=data.get("image_url"),  # <--- this comes from ImageKit
-			fileId=data.get("fileId"),  # Store the ImageKit fileId if needed
-		)
+		# create products (list of product objects)
+		products = []
+		try:
+			with transaction.atomic():  # entire batch is atomic
+				for prod in data:
+					print("Validating product data...")
+					# Validate incoming data
+					# validated_data = {}
+					# for field in prod:
+					# 	if field not in valid_product_fields:
+					# 		print(f"Invalid field in product data: {field}")
+					# 		continue
+					# 	if field in ["marketPrice", "discountPrice"]:
+					# 		try:
+					# 			validated_data[field] = float(prod[field])
+					# 		except ValueError:
+					# 			return Response({"error": f"Invalid value for {field}"}, status=400)
+					# 	else:
+					# 		validated_data[field] = prod.get(field)
+					# pretty_print_json(validated_data)
 
-		serialized_product = ProductSerializer(product).data
-		return Response(serialized_product, status=201)
+					print('Map incoming data to model fields...')
+					# Map incoming data to model fields
+					cleaned_data = {
+						"name": prod.get("product_name", None),
+						"description": prod.get("product_description", None),
+						"fullDescription": prod.get("full_descriptions", None),
+						"marketPrice": prod.get("market_price", None),
+						"discountPrice": prod.get("discount_price", None),
+						# "noOfReviewers": validated_data.get("noOfReviewers", 0),
+					}
+
+					print("Processing price fields...")
+					# validating and converting price fields to float
+					if cleaned_data["marketPrice"] is not None and cleaned_data["discountPrice"] is not None:
+						print("Converting price fields to float...")
+						try:
+							print("Before conversion:", cleaned_data["marketPrice"], cleaned_data["discountPrice"])
+							cleaned_data["marketPrice"] = float(cleaned_data["marketPrice"])
+							cleaned_data["discountPrice"] = float(cleaned_data["discountPrice"])
+							print("After conversion:", cleaned_data["marketPrice"], cleaned_data["discountPrice"])
+						except (TypeError, ValueError):
+							print("Invalid price format")
+							return Response({"error": "Invalid market and/or discount price format"}, status=400)
+					else:
+						print("Price fields cannot be null")
+						return Response({"error": "market and discount price fields are required"}, status=400)
+
+					print('mapping image urls and field IDs...')
+					# handle mapping image_url and fileId dynamically
+					for i in range(5):
+						cleaned_data[f"image_url_{i}"] = prod.get(f"image_url{i}")
+						cleaned_data[f"fileId_{i}"] = prod.get(f"fileId{i}")
+
+					# get store ID
+					storeID = prod.get("storeID", None)
+					print(f"Store ID: {storeID}")
+					if not storeID:
+						print("Store ID is missing in product data")
+						return Response({"error": "Store is required"}, status=400)
+
+					print("Checking required fields...")
+					# check that required fields are present
+					required_fields = [
+						"name", "description", "fullDescription", "marketPrice",
+						"discountPrice", "image_url_0", "fileId_0"
+					]
+					for field in required_fields:
+						if cleaned_data.get(field) is None:
+							print(f"Missing required field: {field}")
+							return Response({"error": f"{field} is required"}, status=400)
+
+					print("Creating product record in database...")
+					# data contains info from React, including the uploaded image URL
+					product = Product.objects.create(**cleaned_data, store_id=storeID)
+					print(f"Created and appended product with ID: {product.id} to products list to be serialized")
+					products.append(product)
+
+		except ValueError as ve:
+			print(f"ValueError: {ve}")
+			return Response({"error": str(ve)}, status=400)
+
+		except Exception as e:
+			print(f"Error creating products: {e}")
+			return Response({"error": "Failed to create products"}, status=500)
+
+		print(f"Total products created: {len(products)}")
+
+		# Serialize and return created products
+		serialized_products = ProductSerializer(products, many=True).data
+		return Response(serialized_products, status=201)
 
 	elif request.method == "GET":
 		print(f"Received GET request for products, pk={pk}")
