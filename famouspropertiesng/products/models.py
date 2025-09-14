@@ -20,6 +20,8 @@ class Product(models.Model):
     fileId_2 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
     image_url_3 = models.URLField(blank=True, null=True)  # only store ImageKit URL
     fileId_3 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
+    image_url_4 = models.URLField(blank=True, null=True)  # only store ImageKit URL
+    fileId_4 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
     sold = models.BooleanField(default=False)  # Indicates if the product is sold
     noOfReviewers = models.IntegerField(default=0)
     store = models.ForeignKey(
