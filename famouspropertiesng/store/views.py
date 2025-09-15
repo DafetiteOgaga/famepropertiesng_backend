@@ -15,7 +15,7 @@ allowed_update_fields = [
 	"userID",
 	"store_name",
 	"description",
-	# "store_phone_number",
+	"store_phone_number",
 	# "store_email_address",
 	# "store_address",
 	"image_url",
@@ -53,6 +53,7 @@ def store_view(requests, pk=None):
 		data_keys = data.keys()
 		for field in data_keys:
 			if field in allowed_update_fields:
+				print(f"✅ Field '{field}' allowed, adding to update_fields...")
 				update_fields[field] = data[field]
 			else:
 				print(f"🚫 Field '{field}' not allowed, skipping...")
