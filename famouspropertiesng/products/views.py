@@ -16,7 +16,13 @@ valid_product_fields = [
 	"marketingDescription", "marketPrice", "discountPrice",
 	"image_url_0", "fileId_0", "image_url_1", "fileId_1",
 	"image_url_2", "fileId_2", "image_url_3", "fileId_3",
-	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store"
+	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store",
+	"techFeature_1", "techFeature_2", "techFeature_3",
+	"techFeature_4", "techFeature_5"
+]
+required_fields = [
+	"name", "description", "fullDescription", "marketPrice",
+	"discountPrice", "image_url_0", "fileId_0"
 ]
 
 # Create your views here.
@@ -35,22 +41,7 @@ def products(request, pk=None, all=None):
 		try:
 			with transaction.atomic():  # entire batch is atomic
 				for prod in data:
-					print("Validating product data...")
-					# Validate incoming data
-					# validated_data = {}
-					# for field in prod:
-					# 	if field not in valid_product_fields:
-					# 		print(f"Invalid field in product data: {field}")
-					# 		continue
-					# 	if field in ["marketPrice", "discountPrice"]:
-					# 		try:
-					# 			validated_data[field] = float(prod[field])
-					# 		except ValueError:
-					# 			return Response({"error": f"Invalid value for {field}"}, status=400)
-					# 	else:
-					# 		validated_data[field] = prod.get(field)
-					# pretty_print_json(validated_data)
-
+					# print("Validating product data...")
 					print('Map incoming data to model fields...')
 					# Map incoming data to model fields
 					cleaned_data = {
@@ -59,6 +50,13 @@ def products(request, pk=None, all=None):
 						"fullDescription": prod.get("full_descriptions", None),
 						"marketPrice": prod.get("market_price", None),
 						"discountPrice": prod.get("discount_price", None),
+						"technicalDescription": prod.get("technical_descriptions", None),
+						"marketingDescription": prod.get("marketing_descriptions", None),
+						"techFeature_1": prod.get("technical_feature_1", None),
+						"techFeature_2": prod.get("technical_feature_2", None),
+						"techFeature_3": prod.get("technical_feature_3", None),
+						"techFeature_4": prod.get("technical_feature_4", None),
+						"techFeature_5": prod.get("technical_feature_5", None),
 						# "noOfReviewers": validated_data.get("noOfReviewers", 0),
 					}
 
@@ -73,10 +71,10 @@ def products(request, pk=None, all=None):
 							print("After conversion:", cleaned_data["marketPrice"], cleaned_data["discountPrice"])
 						except (TypeError, ValueError):
 							print("Invalid price format")
-							return Response({"error": "Invalid market and/or discount price format"}, status=400)
+							return Response({"error": "Invalid: Either market and/or discount price format"}, status=400)
 					else:
 						print("Price fields cannot be null")
-						return Response({"error": "market and discount price fields are required"}, status=400)
+						return Response({"error": "Both market and discount price are required"}, status=400)
 
 					print('mapping image urls and field IDs...')
 					# handle mapping image_url and fileId dynamically
@@ -93,14 +91,13 @@ def products(request, pk=None, all=None):
 
 					print("Checking required fields...")
 					# check that required fields are present
-					required_fields = [
-						"name", "description", "fullDescription", "marketPrice",
-						"discountPrice", "image_url_0", "fileId_0"
-					]
 					for field in required_fields:
 						if cleaned_data.get(field) is None:
 							print(f"Missing required field: {field}")
-							return Response({"error": f"{field} is required"}, status=400)
+							return Response({"error": f"{'Image 1' if (field.lower().startswith('image_url') or field.lower().startswith('fileid')) else field} is required"}, status=400)
+
+					print("cleaned data...")
+					pretty_print_json(cleaned_data)
 
 					print("Creating product record in database...")
 					# data contains info from React, including the uploaded image URL
@@ -118,6 +115,7 @@ def products(request, pk=None, all=None):
 
 		print(f"Total products created: {len(products)}")
 
+		# return Response({"ok": "all good"}, status=201)
 		# Serialize and return created products
 		serialized_products = ProductSerializer(products, many=True).data
 		return Response(serialized_products, status=201)
