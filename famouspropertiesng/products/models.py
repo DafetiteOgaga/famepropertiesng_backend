@@ -8,7 +8,6 @@ class Product(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField()
     fullDescription = models.TextField()
-    technicalDescription = models.TextField(null=True, blank=True)
     marketingDescription = models.TextField(null=True, blank=True)
     marketPrice = models.DecimalField(max_digits=10, decimal_places=2)
     discountPrice = models.DecimalField(max_digits=10, decimal_places=2)
@@ -24,6 +23,12 @@ class Product(models.Model):
     fileId_4 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId
     sold = models.BooleanField(default=False)  # Indicates if the product is sold
     noOfReviewers = models.IntegerField(default=0)
+    technicalDescription = models.TextField(null=True, blank=True)
+    techFeature_1 = models.CharField(max_length=200, null=True, blank=True)
+    techFeature_2 = models.CharField(max_length=200, null=True, blank=True)
+    techFeature_3 = models.CharField(max_length=200, null=True, blank=True)
+    techFeature_4 = models.CharField(max_length=200, null=True, blank=True)
+    techFeature_5 = models.CharField(max_length=200, null=True, blank=True)
     store = models.ForeignKey(
         'store.Store',                 # Link to Store model
         on_delete=models.CASCADE,      # If store is deleted, delete its products
