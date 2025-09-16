@@ -23,7 +23,8 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'nearest_bus_stop','phoneCode','stateCode',
                 'countryId','stateId','cityId', 'hasCities',
                 'hasStates', 'product_ratings', 'is_seller',
-                'store',
+                'currency', 'currencySymbol', 'currencyName',
+                'countryEmoji', 'store',
     ]
 
 class UserSerializerWRatings(serializers.ModelSerializer):
@@ -37,7 +38,8 @@ class UserSerializerWRatings(serializers.ModelSerializer):
                 'nearest_bus_stop','phoneCode','stateCode',
                 'countryId','stateId','cityId', 'hasCities',
                 'hasStates', 'product_ratings', 'is_seller',
-                'store',
+                'currency', 'currencySymbol', 'currencyName',
+                'countryEmoji', 'store',
     ]
 
 # class MinuteUserSerializer(serializers.ModelSerializer):

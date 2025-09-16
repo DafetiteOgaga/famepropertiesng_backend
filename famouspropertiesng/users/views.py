@@ -37,6 +37,10 @@ allowed_fields = [
 	"cityId",
 	"hasCities",
 	"hasStates",
+	"currency",
+	"currencySymbol",
+	"currencyName",
+	"countryEmoji",
 ]
 
 allowed_update_fields = [
@@ -58,6 +62,10 @@ allowed_update_fields = [
 	"cityId",
 	"hasCities",
 	"hasStates",
+	"currency",
+	"currencySymbol",
+	"currencyName",
+	"countryEmoji",
 ]
 
 def get_basic_auth_header():
@@ -71,6 +79,8 @@ def users(request, pk=None):
 		data = json.loads(request.body)
 		print(f"Received data for new user:")
 		pretty_print_json(data)
+
+		# return Response({"ok": "all good"}, status=status.HTTP_201_CREATED)
 
 		# user_data = {field: data.get(field) for field in allowed_fields if field in data}
 		user_data = {}
@@ -197,6 +207,8 @@ def updateUser(request, pk):
 		# data = json.loads(request.body)
 		print(f"Received data for updating user {pk}:")
 		pretty_print_json(data)
+
+		# return Response({"ok": "all good"}, status=status.HTTP_201_CREATED)
 
 		try:
 			user = User.objects.get(pk=pk)
