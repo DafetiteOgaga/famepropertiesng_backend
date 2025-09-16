@@ -20,6 +20,10 @@ class User(AbstractUser):
 	country = models.CharField(max_length=100, null=True, blank=True)
 	countryId = models.IntegerField(null=True, blank=True)
 	hasStates = models.BooleanField(default=False)
+	currency = models.CharField(max_length=20, null=True, blank=True)
+	currencySymbol = models.CharField(max_length=20, null=True, blank=True)
+	currencyName = models.CharField(max_length=50, null=True, blank=True)
+	countryEmoji = models.CharField(max_length=150, null=True, blank=True)
 
 	# profile picture fields
 	image_url = models.URLField(blank=True, null=True)  # only store ImageKit URL
