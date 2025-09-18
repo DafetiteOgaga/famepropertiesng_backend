@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'checkouts',		# <- added startapp here
     'store',		# <- added startapp here
     'productrating',		# <- added startapp here
     'maillist',		# <- added startapp here
