@@ -18,11 +18,11 @@ valid_product_fields = [
 	"image_url_2", "fileId_2", "image_url_3", "fileId_3",
 	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store",
 	"techFeature_1", "techFeature_2", "techFeature_3",
-	"techFeature_4", "techFeature_5"
+	"techFeature_4", "techFeature_5", "thumbnail_url_0",
 ]
 required_fields = [
 	"name", "description", "fullDescription", "marketPrice",
-	"discountPrice", "image_url_0", "fileId_0"
+	"discountPrice", "image_url_0", "fileId_0", "thumbnail_url_0"
 ]
 
 # Create your views here.
@@ -57,6 +57,7 @@ def products(request, pk=None, all=None):
 						"techFeature_3": prod.get("technical_feature_3", None),
 						"techFeature_4": prod.get("technical_feature_4", None),
 						"techFeature_5": prod.get("technical_feature_5", None),
+						"thumbnail_url_0": prod.get("thumbnail_url0", None),
 						# "noOfReviewers": validated_data.get("noOfReviewers", 0),
 					}
 
