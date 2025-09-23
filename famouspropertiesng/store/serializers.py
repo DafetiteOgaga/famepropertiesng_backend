@@ -20,6 +20,6 @@ class StoreSerializer(serializers.ModelSerializer):
 			'id', 'user', 'store_name',
 			'nearest_bus_stop', 'description',
 			'store_status', 'verified', 'rating',
-			'store_phone_number',
+			'store_phone_number', 'store_address',
 		]
 
