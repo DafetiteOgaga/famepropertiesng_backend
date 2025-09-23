@@ -11,6 +11,7 @@ class Product(models.Model):
     marketingDescription = models.TextField(null=True, blank=True)
     marketPrice = models.DecimalField(max_digits=10, decimal_places=2)
     discountPrice = models.DecimalField(max_digits=10, decimal_places=2)
+    numberOfItems = models.IntegerField(default=1)  # New field for number of items
     thumbnail_url_0 = models.URLField(blank=True, null=True)  # only store ImageKit URL
     image_url_0 = models.URLField(blank=True, null=True)  # only store ImageKit URL
     fileId_0 = models.CharField(max_length=200, null=True, blank=True)  # store ImageKit fileId

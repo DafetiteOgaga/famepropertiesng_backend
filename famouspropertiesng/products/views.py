@@ -19,10 +19,22 @@ valid_product_fields = [
 	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store",
 	"techFeature_1", "techFeature_2", "techFeature_3",
 	"techFeature_4", "techFeature_5", "thumbnail_url_0",
+	"numberOfItems",
+]
+valid_updatable_fields = [
+	"name", "description", "fullDescription", "technicalDescription",
+	"marketingDescription", "marketPrice", "discountPrice",
+	"image_url_0", "fileId_0", "image_url_1", "fileId_1",
+	"image_url_2", "fileId_2", "image_url_3", "fileId_3",
+	"image_url_4", "fileId_4", "sold", "noOfReviewers",
+	"techFeature_1", "techFeature_2", "techFeature_3",
+	"techFeature_4", "techFeature_5", "thumbnail_url_0",
+	"numberOfItems",
 ]
 required_fields = [
 	"name", "description", "fullDescription", "marketPrice",
-	"discountPrice", "image_url_0", "fileId_0", "thumbnail_url_0"
+	"discountPrice", "image_url_0", "fileId_0", "thumbnail_url_0",
+	"numberOfItems",
 ]
 
 # Create your views here.
@@ -50,6 +62,7 @@ def products(request, pk=None, all=None):
 						"fullDescription": prod.get("full_descriptions", None),
 						"marketPrice": prod.get("market_price", None),
 						"discountPrice": prod.get("discount_price", None),
+						"numberOfItems": int(prod.get("number_of_items", 1)),
 						"technicalDescription": prod.get("technical_descriptions", None),
 						"marketingDescription": prod.get("marketing_descriptions", None),
 						"techFeature_1": prod.get("technical_feature_1", None),
@@ -154,6 +167,95 @@ def products(request, pk=None, all=None):
 				response.data["total_pages"] = paginator.page.paginator.num_pages
 				return response
 
+@csrf_exempt
+@api_view(['PUT'])
+def updateProduct(request, pk):
+	print(f"Updating product with id: {pk}")
+	if request.method == "PUT":
+		try:
+			product = Product.objects.get(pk=pk)
+		except Product.DoesNotExist:
+			return Response({"error": "Product not found"}, status=404)
+
+		data = json.loads(request.body)
+		print("Received update data:")
+		pretty_print_json(data)
+
+		# prodSerial = ProductSerializer(product).data
+		# print("Current product data:")
+		# pretty_print_json(prodSerial)
+		# return Response({"ok": "all good"}, status=200)
+
+		# # Update only valid fields
+		# updated_fields = {}
+		# for field in valid_updatable_fields:
+		# 	if field in data:
+		# 		updated_fields[field] = data[field]
+		# 	else:
+		# 		print(f"🚫 Field '{field}' not updatable; skipping.")
+
+		# if not updated_fields:
+		# 	return Response({"error": "No valid fields to update"}, status=400)
+
+		print('Map incoming data to model fields...')
+		cleaned_data = {
+			"name": data.get("product_name", None),
+			"description": data.get("product_description", None),
+			"fullDescription": data.get("full_descriptions", None),
+			"marketPrice": data.get("market_price", None),
+			"discountPrice": data.get("discount_price", None),
+			"numberOfItems": int(data.get("number_of_items", 1)),
+			"technicalDescription": data.get("technical_descriptions", None),
+			"marketingDescription": data.get("marketing_descriptions", None),
+			"techFeature_1": data.get("technical_feature_1", None),
+			"techFeature_2": data.get("technical_feature_2", None),
+			"techFeature_3": data.get("technical_feature_3", None),
+			"techFeature_4": data.get("technical_feature_4", None),
+			"techFeature_5": data.get("technical_feature_5", None),
+			"thumbnail_url_0": data.get("thumbnail_url0", None),
+			# "noOfReviewers": validated_data.get("noOfReviewers", 0),
+		}
+
+		print("Processing price fields...")
+		# validating and converting price fields to float
+		if cleaned_data["marketPrice"] is not None and cleaned_data["discountPrice"] is not None:
+			print("Converting price fields to float...")
+			try:
+				print("Before conversion:", cleaned_data["marketPrice"], cleaned_data["discountPrice"])
+				cleaned_data["marketPrice"] = float(cleaned_data["marketPrice"])
+				cleaned_data["discountPrice"] = float(cleaned_data["discountPrice"])
+				print("After conversion:", cleaned_data["marketPrice"], cleaned_data["discountPrice"])
+			except (TypeError, ValueError):
+				print("Invalid price format")
+				return Response({"error": "Invalid: Either market and/or discount price format"}, status=400)
+		else:
+			print("Price fields cannot be null")
+			return Response({"error": "Both market and discount price are required"}, status=400)
+
+		print('mapping image urls and field IDs...')
+		# handle mapping image_url and fileId dynamically
+		for i in range(5):
+			if data.get(f"image_url{i}") is None: continue
+			cleaned_data[f"image_url_{i}"] = data.get(f"image_url{i}")
+			cleaned_data[f"fileId_{i}"] = data.get(f"fileId{i}")
+
+		print("Updating fields:")
+		pretty_print_json(cleaned_data)
+
+		for field, value in cleaned_data.items():
+			setattr(product, field, value)
+
+		try:
+			product.save()
+			serialized_product = ProductSerializer(product).data
+			print("Updated product:")
+			pretty_print_json(serialized_product)
+			return Response(serialized_product, status=200)
+		except Exception as e:
+			print(f"Error updating product: {e}")
+			return Response({"error": "Failed to update product"}, status=500)
+	else:
+		return Response({"error": "Method not allowed"}, status=405)
 
 @csrf_exempt
 @api_view(['POST'])

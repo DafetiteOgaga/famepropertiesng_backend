@@ -6,6 +6,30 @@ from .models import *
 from hooks.prettyprint import pretty_print_json
 import json
 
+valid_fields = [
+	"userID",
+	"first_name",
+	"last_name",
+	"email",
+	"mobile_no",
+	"address",
+	"city",
+	"state",
+	"country",
+	"postal_code",
+	"subtotal_amount",
+	"shipping_fee",
+	"total_amount",
+	# "payment_status",
+	"payment_method",
+	# "shipping_status",
+	# "shipping_method",
+	# "coupon_code",
+	# "receipt_url",
+	"transaction_id",
+	# "return_or_refund_status",
+]
+
 # Create your views here.
 @api_view(['GET', 'POST'])
 def checkouts(request):
