@@ -10,6 +10,7 @@ from django.conf import settings
 from .serializers import StoreSerializer
 from django.db import IntegrityError
 from users.models import User
+from users.serializers import UserSerializerWRatings
 
 allowed_update_fields = [
 	"userID",
@@ -116,6 +117,57 @@ def store_view(requests, pk=None):
 			pretty_print_json(serialized_store)
 
 		return Response(serialized_store, status=200)
+
+@api_view(['POST'])
+def update_store(request, pk):
+	if request.method == "POST":
+		data = json.loads(request.body)
+		print(f"Received update data for user {pk}:")
+		pretty_print_json(data)
+
+		try:
+			print(f'data bf: {data}')
+			id = data.pop("storeID")
+			print(f'data af: {data}')
+			store = Store.objects.get(id=id)
+			print(f'store: {store}')
+			for field, value in data.items():
+				setattr(store, field, value)
+			store.save()
+			# print(f"Found store for user {pk}:")
+			pretty_print_json(StoreSerializer(store).data)
+			user = User.objects.get(id=pk)
+			user_serializer = UserSerializerWRatings(user).data
+			return Response(user_serializer, status=status.HTTP_200_OK)
+		except Store.DoesNotExist:
+			return Response({"error": "Store not found for this user"}, status=404)
+
+		# note that pk is user not store
+
+		# return Response({"message": "Store update is disabled"}, status=status.HTTP_200_OK)
+		# Update only allowed fields
+		# update_fields = {}
+		# data_keys = data.keys()
+		# for field in data_keys:
+		# 	if field in allowed_update_fields:
+		# 		print(f"✅ Field '{field}' allowed, adding to update_fields...")
+		# 		update_fields[field] = data[field]
+		# 	else:
+		# 		print(f"🚫 Field '{field}' not allowed, skipping...")
+
+		# print()
+		# print(f"allowed update data:")
+		# pretty_print_json(update_fields)
+
+		# store = get_object_or_404(Store, pk=pk)
+		# for key, value in update_fields.items():
+		# 	setattr(store, key, value)
+		# store.save()
+
+		# serialized_store = StoreSerializer(store).data
+		# print(f"Updated store {pk}:")
+		# pretty_print_json(serialized_store)
+		# return Response(serialized_store, status=200)
 
 @api_view(['GET'])
 def check_store_name(request, name):
