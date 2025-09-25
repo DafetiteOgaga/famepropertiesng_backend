@@ -303,3 +303,32 @@ def likeProduct(request, pk):
 			return Response(serialized_product, status=404)
 	# else:
 	# 	return Response({"error": "Method not allowed"}, status=405)
+
+@api_view(['GET'])
+def storeProducts(request, pk):
+	if request.method == 'GET':
+		print(f"Received request to list products for store with id: {pk}")
+		# qs = Product.objects.all().order_by('id') # from oldest to newest
+		try:
+			products = Product.objects.filter(store_id=pk).order_by('id')
+			print(f"Fetched {products.count()} products for store {pk}")
+			# serialized_products = ProductSerializer(products, many=True).data
+			# else:
+			print("Paginating products")
+			paginator = PageNumberPagination() # DRF paginator
+			paginator.page_size = 3 # default page size
+
+			# allow client to set page size using `?page_size=...` query param
+			paginator.page_size_query_param = 'page_size' # allow request for page size by users e.g ?page_size=...
+			paginator.max_page_size = 100 # safety cap for page size request
+
+			page = paginator.paginate_queryset(products, request) # get page's items
+			serialized_products = ProductSerializer(page, many=True).data # serialize page
+			response = paginator.get_paginated_response(serialized_products)
+			response.data["total_pages"] = paginator.page.paginator.num_pages
+			return response
+			# return Response(serialized_products, status=200)
+		except Exception as e:
+			print(f"Error fetching products for store {pk}: {e}")
+			return Response({"error": "Failed to fetch products"}, status=500)
+	# return JsonResponse({"message": f"List products for store {pk}"})
