@@ -316,7 +316,7 @@ def storeProducts(request, pk):
 			# else:
 			print("Paginating products")
 			paginator = PageNumberPagination() # DRF paginator
-			paginator.page_size = 3 # default page size
+			paginator.page_size = 8 # default page size
 
 			# allow client to set page size using `?page_size=...` query param
 			paginator.page_size_query_param = 'page_size' # allow request for page size by users e.g ?page_size=...
