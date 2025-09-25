@@ -12,4 +12,5 @@ urlpatterns = [
 	path("delete-products/", views.deleteProduct, name="delete_product"),
 	path("sold-products/<int:pk>/", views.designateAsSold, name="sold_product"),
 	path("like-product/<int:pk>/", views.likeProduct, name="like_product"),
+	path("store-products/<int:pk>/", views.storeProducts, name="store_products"),
 ]
