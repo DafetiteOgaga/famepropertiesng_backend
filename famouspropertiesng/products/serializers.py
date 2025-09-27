@@ -18,3 +18,15 @@ class ProductSerializer(serializers.ModelSerializer):
 
 	def get_total_reviewed(self, obj):
 		return obj.rn_prod_ratings.count()
+
+class CategorySerializer(serializers.ModelSerializer):
+    subcategories = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "description", "subcategories"]
+
+    def get_subcategories(self, obj):
+        # Recursively serialize children
+        children = obj.rn_subcategories.all()
+        return CategorySerializer(children, many=True).data
