@@ -13,4 +13,5 @@ urlpatterns = [
 	path("sold-products/<int:pk>/", views.designateAsSold, name="sold_product"),
 	path("like-product/<int:pk>/", views.likeProduct, name="like_product"),
 	path("store-products/<int:pk>/", views.storeProducts, name="store_products"),
+	path('categories/', views.get_categories, name='category_list'),  # For listing categories
 ]
