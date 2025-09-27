@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import Product
+from .models import Product, Category
 from django.db import transaction
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, CategorySerializer
 from hooks.deleteImage import delete_image
 from hooks.prettyprint import pretty_print_json
 from rest_framework.pagination import PageNumberPagination
@@ -332,3 +332,28 @@ def storeProducts(request, pk):
 			print(f"Error fetching products for store {pk}: {e}")
 			return Response({"error": "Failed to fetch products"}, status=500)
 	# return JsonResponse({"message": f"List products for store {pk}"})
+
+@api_view(['GET'])
+def get_categories(request):
+	if request.method == 'GET':
+		categories = Category.objects.all() # .only("id", "name", "description", "parent_id")
+
+		category_map = {}
+		for cat in categories:
+			category_map.setdefault(cat.parent_id, []).append(cat)
+
+		def build_tree(parent_id=None):
+			children = []
+			for cat in category_map.get(parent_id, []):
+				children.append({
+					"id": cat.id,
+					"name": cat.name,
+					"description": cat.description,
+					"subcategories": build_tree(cat.id)
+				})
+			return children
+
+		data = build_tree()  # Start from root categories
+		return Response(data, status=200)
+	else:
+		return Response({"error": "Method not allowed"}, status=405)
