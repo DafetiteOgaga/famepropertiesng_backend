@@ -37,8 +37,27 @@ class Product(models.Model):
         related_name="rn_products",    # Access with store.products
         null=True, # remove later      # A product can exist without a store
     )
+    category = models.ManyToManyField(
+        'Category',
+        related_name='rn_products',
+        blank=True  # A product can exist without a category
+    )  #
     
     ##### add a many-to-many relationship to the Category model (a product can belong to many categories and vice versa)
+
+    def __str__(self):
+        return self.name
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(null=True, blank=True)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="rn_subcategories",
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.name
