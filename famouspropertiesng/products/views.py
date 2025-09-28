@@ -357,3 +357,59 @@ def get_categories(request):
 		return Response(data, status=200)
 	else:
 		return Response({"error": "Method not allowed"}, status=405)
+
+@api_view(['GET'])
+def query_category(request, category):
+	if request.method == 'GET':
+		print(f"Received request for category: {category}")
+		try:
+			# Get the category (case-insensitive)
+			cat = Category.objects.prefetch_related(
+					'rn_category_products',
+				).get(
+					name__iexact=category
+				)
+			print(f"Found category: {cat.name} (ID: {cat.id})")
+			# Get all products under this category
+			products = cat.rn_category_products.all().order_by('id')
+			print(f"Found {products.count()} products under category '{cat.name}'")
+			# print(f"products: {products}")
+			print("Serializing data...")
+
+			# Serialize category
+			category_data = CategorySerializer(cat).data
+
+			# Serialize products
+			# products_data = ProductSerializer(products, many=True).data
+			# print(f"Serialized {len(products_data)} products")
+
+			print("Fetching paginated products")
+			paginator = PageNumberPagination() # DRF paginator
+			paginator.page_size = 8 # default page size
+
+			# allow client to set page size using `?page_size=...` query param
+			paginator.page_size_query_param = 'page_size' # allow request for page size by users e.g ?page_size=...
+			paginator.max_page_size = 100 # safety cap for page size request
+
+			print("Paginating products...")
+			page = paginator.paginate_queryset(products, request) # get page's items
+			print(f"Paginated to {len(page)} products for current page")
+			serializer = ProductSerializer(page, many=True).data # serialize page
+			print(f"Serialized {len(serializer)} products for current page")
+			response = paginator.get_paginated_response(serializer)
+			print("Building response data...")
+			response.data["total_pages"] = paginator.page.paginator.num_pages
+			response.data["category_id"] = category_data["id"]
+			response.data["category"] = category_data["name"]
+			response.data["category_description"] = category_data["description"]
+			response.data["total_pages"] = paginator.page.paginator.num_pages
+			print(f"Total pages: {response.data['total_pages']}")
+			# pretty_print_json(response)
+
+			return response
+
+		except Category.DoesNotExist:
+			print(f"Category '{category}' not found")
+			return Response({"error": f"Category '{category}' not found"}, status=404)
+
+	return Response({"error": "Method not allowed"}, status=405)

@@ -39,11 +39,9 @@ class Product(models.Model):
     )
     category = models.ManyToManyField(
         'Category',
-        related_name='rn_products',
+        related_name='rn_category_products',
         blank=True  # A product can exist without a category
-    )  #
-    
-    ##### add a many-to-many relationship to the Category model (a product can belong to many categories and vice versa)
+    )
 
     def __str__(self):
         return self.name

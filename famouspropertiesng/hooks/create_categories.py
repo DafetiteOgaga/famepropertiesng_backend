@@ -7,6 +7,7 @@ def create_or_update_categories(data, parent=None):
     """
     # print(f"Processing categories under parent: {parent.name if parent else 'None'}")
     for name, children in data.items():
+        name = name.lower() # Normalize to lowercase for consistency
         # If children is a list, convert it to dict form
         if isinstance(children, list):
             children = {child: {} for child in children}

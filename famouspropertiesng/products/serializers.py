@@ -11,7 +11,7 @@ class ProductSerializer(serializers.ModelSerializer):
 	total_reviewed = serializers.SerializerMethodField()
 	class Meta:
 		model = Product
-		fields = '__all__'
+		exclude = ['category']
 
 	def get_total_liked(self, obj):
 		return obj.rn_prod_ratings.filter(liked=True).count()
