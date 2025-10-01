@@ -3,7 +3,7 @@ import random
 
 def post_featurers():
     """
-    Loops through the products and updates the number_of_items field randomly
+    Loops through the products and updates the number_of_items_available field randomly
     """
     for para in icon_dict.keys():
         FeatureAdvert.objects.create(
