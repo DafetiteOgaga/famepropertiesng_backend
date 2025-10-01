@@ -466,3 +466,36 @@ def query_category(request, category):
 			return Response({"error": f"Category '{category}' not found"}, status=404)
 
 	return Response({"error": "Method not allowed"}, status=405)
+
+@api_view(['POST'])
+def getAvailableTotal(request):
+	if request.method == 'POST':
+		data = json.loads(request.body)
+		print("Received data for availability check:")
+		pretty_print_json(data)
+
+		product_ids = data.get("productIds", [])
+		if not product_ids or not isinstance(product_ids, list):
+			return Response({"error": "Invalid or missing 'product_ids' list"}, status=400)
+
+		print(f"Checking availability for product IDs: {product_ids}")
+
+		try:
+			products = Product.objects.filter(id__in=product_ids)
+			availability = {str(prod.id): prod.numberOfItemsAvailable for prod in products}
+
+			print(f"Fetched availability for {len(availability)} products from DB")
+			# print("Raw availability data:")
+			# pretty_print_json(availability)
+
+			# Ensure all requested IDs are represented in the response
+			for pid in product_ids:
+				availability.setdefault(str(pid), 0)  # Default to 0 if not found
+
+			print("Availability results:")
+			pretty_print_json(availability)
+
+			return Response(availability, status=200)
+		except Exception as e:
+			print(f"Error checking availability: {e}")
+			return Response({"error": "Failed to check availability"}, status=500)
