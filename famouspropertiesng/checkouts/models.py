@@ -34,9 +34,9 @@ class Checkout(models.Model):
 	state = models.CharField(max_length=100, null=True, blank=True)
 	country = models.CharField(max_length=100, null=True, blank=True)
 	postal_code = models.CharField(max_length=20, null=True, blank=True)
-	subtotal_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Sum of product prices
-	shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True, blank=True)  # Sum of product prices)
-	total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Sum of product prices
+	subtotal_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)  # Sum of product prices
+	shipping_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, null=True, blank=True)  # Sum of product prices)
+	total_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)  # Sum of product prices
 	payment_status = models.CharField(max_length=50, choices=PAYMENT_STATUS_CHOICES, default='pending', db_index=True)  # e.g., pending, completed, failed
 	payment_method = models.CharField(max_length=50, null=True, blank=True)  # e.g., credit card, PayPal
 	shipping_status = models.CharField(max_length=50, choices=SHIPPING_STATUS_CHOICES, default='processing', db_index=True)  # e.g., processing, shipped, delivered
@@ -55,7 +55,7 @@ class CheckoutProduct(models.Model):
     checkout = models.ForeignKey(Checkout, on_delete=models.CASCADE, related_name="rn_checkout_products")
     product = models.ForeignKey("products.Product", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # price at time of purchase
+    price = models.DecimalField(max_digits=12, decimal_places=2)  # price at time of purchase
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} (Order {self.checkout.checkoutID})"
