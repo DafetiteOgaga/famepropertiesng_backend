@@ -19,7 +19,7 @@ valid_product_fields = [
 	"image_url_4", "fileId_4", "sold", "noOfReviewers", "store",
 	"techFeature_1", "techFeature_2", "techFeature_3",
 	"techFeature_4", "techFeature_5", "thumbnail_url_0",
-	"numberOfItems",
+	"numberOfItemsAvailable",
 ]
 valid_updatable_fields = [
 	"name", "description", "fullDescription", "technicalDescription",
@@ -29,12 +29,12 @@ valid_updatable_fields = [
 	"image_url_4", "fileId_4", "sold", "noOfReviewers",
 	"techFeature_1", "techFeature_2", "techFeature_3",
 	"techFeature_4", "techFeature_5", "thumbnail_url_0",
-	"numberOfItems",
+	"numberOfItemsAvailable",
 ]
 required_fields = [
 	"name", "description", "fullDescription", "marketPrice",
 	"discountPrice", "image_url_0", "fileId_0", "thumbnail_url_0",
-	"numberOfItems",
+	"numberOfItemsAvailable",
 ]
 
 # Create your views here.
@@ -62,7 +62,7 @@ def products(request, pk=None, all=None):
 						"fullDescription": prod.get("full_descriptions", None),
 						"marketPrice": prod.get("market_price", None),
 						"discountPrice": prod.get("discount_price", None),
-						"numberOfItems": int(prod.get("number_of_items", 1)),
+						"numberOfItemsAvailable": int(prod.get("number_of_items_available", 1)),
 						"technicalDescription": prod.get("technical_descriptions", None),
 						"marketingDescription": prod.get("marketing_descriptions", None),
 						"techFeature_1": prod.get("technical_feature_1", None),
@@ -251,7 +251,7 @@ def updateProduct(request, pk):
 			"fullDescription": data.get("full_descriptions", None),
 			"marketPrice": data.get("market_price", None),
 			"discountPrice": data.get("discount_price", None),
-			"numberOfItems": int(data.get("number_of_items", 1)),
+			"numberOfItemsAvailable": int(data.get("number_of_items_available", 1)),
 			"technicalDescription": data.get("technical_descriptions", None),
 			"marketingDescription": data.get("marketing_descriptions", None),
 			"techFeature_1": data.get("technical_feature_1", None),
