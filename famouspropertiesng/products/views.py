@@ -103,6 +103,26 @@ def products(request, pk=None, all=None):
 						print("Store ID is missing in product data")
 						return Response({"error": "Store is required"}, status=400)
 
+					# get categories
+					categories = prod.get("productCategories", None)
+					print(f"Categories: {categories}")
+					if not categories:
+						print("Atleast one category is required.")
+						return Response({"error": "Atleast one category is required."}, status=400)
+
+					# get the categories keys
+					categories = [cat for cat in categories]
+					print(f"Parsed categories: {categories}")
+
+					cat_objs = Category.objects.filter(name__in=categories)
+					print(f"Fetched {cat_objs.count()} category objects from DB")
+					print(f"Category objects: {[cat.name for cat in cat_objs]}")
+					print(f"checking if all categories were found...")
+					print(f"db count: {cat_objs.count()}, input count: {len(categories)}, equals: {cat_objs.count() == len(categories)}")
+					if cat_objs.count() != len(categories):
+						print("One or more categories not found")
+						return Response({"error": "One or more categories not found"}, status=400)
+
 					print("Checking required fields...")
 					# check that required fields are present
 					for field in required_fields:
@@ -111,11 +131,17 @@ def products(request, pk=None, all=None):
 							return Response({"error": f"{'Image 1' if (field.lower().startswith('image_url') or field.lower().startswith('fileid')) else field} is required"}, status=400)
 
 					print("cleaned data...")
-					pretty_print_json(cleaned_data)
+					# pretty_print_json(cleaned_data)
 
 					print("Creating product record in database...")
 					# data contains info from React, including the uploaded image URL
 					product = Product.objects.create(**cleaned_data, store_id=storeID)
+
+					product.category.set(cat_objs)  # set categories
+					print(f"Linked categories: {[cat.name for cat in cat_objs]} to product ID: {product.id}")
+					# print("Product created successfully:")
+					# pretty_print_json(ProductSerializer(product).data)
+
 					print(f"Created and appended product with ID: {product.id} to products list to be serialized")
 					products.append(product)
 
@@ -132,6 +158,7 @@ def products(request, pk=None, all=None):
 		# return Response({"ok": "all good"}, status=201)
 		# Serialize and return created products
 		serialized_products = ProductSerializer(products, many=True).data
+		pretty_print_json(serialized_products)
 		return Response(serialized_products, status=201)
 
 	elif request.method == "GET":
@@ -197,6 +224,26 @@ def updateProduct(request, pk):
 		# if not updated_fields:
 		# 	return Response({"error": "No valid fields to update"}, status=400)
 
+		# get categories
+		categories = data.get("productCategories", None)
+		print(f"Categories: {categories}")
+		if not categories:
+			print("Atleast one category is required.")
+			return Response({"error": "Atleast one category is required."}, status=400)
+
+		# get the categories keys
+		categories = [cat for cat in categories]
+		print(f"Parsed categories: {categories}")
+
+		cat_objs = Category.objects.filter(name__in=categories)
+		print(f"Fetched {cat_objs.count()} category objects from DB")
+		print(f"Category objects: {[cat.name for cat in cat_objs]}")
+		print(f"checking if all categories were found...")
+		print(f"db count: {cat_objs.count()}, input count: {len(categories)}, equals: {cat_objs.count() == len(categories)}")
+		if cat_objs.count() != len(categories):
+			print("One or more categories not found")
+			return Response({"error": "One or more categories not found"}, status=400)
+
 		print('Map incoming data to model fields...')
 		cleaned_data = {
 			"name": data.get("product_name", None),
@@ -247,7 +294,13 @@ def updateProduct(request, pk):
 
 		try:
 			product.save()
+
+			# product.category.clear()  # clear existing categories
+			product.category.set(cat_objs)  # set categories
+			print(f"Linked categories: {[cat.name for cat in cat_objs]} to product ID: {product.id}")
+
 			serialized_product = ProductSerializer(product).data
+
 			print("Updated product:")
 			pretty_print_json(serialized_product)
 			return Response(serialized_product, status=200)
