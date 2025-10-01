@@ -10,7 +10,7 @@ def distribute_categories():
         print(f"Clearing categories for product: {product.name}")
         product.category.clear()  # clear existing categories
         print(f"Processing product: {product.name}")
-        chosen = random.sample(dictofcat, 10)  # pick 5 unique categories
+        chosen = random.sample(dictofcat, 25)  # pick 5 unique categories
         print(f"Chosen categories for '{product.name}': {chosen}")
         categories = Category.objects.filter(name__in=chosen)  # fetch them at once
         # print(f"Fetched categories from DB: {[cat.name for cat in categories]}")
