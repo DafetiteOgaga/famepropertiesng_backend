@@ -15,6 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
 class ResponseUserSerializer(serializers.ModelSerializer):
     store = StoreSerializer(source='rn_store', many=True, read_only=True)
     product_ratings = SomeProductRatingSerializer(source='rn_product_ratings', many=True, read_only=True)
+    has_unfulfilled_installments = serializers.SerializerMethodField()
+    # unfulfilled_checkout_ids = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email',
@@ -25,11 +27,27 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'hasStates', 'product_ratings', 'is_seller',
                 'currency', 'currencySymbol', 'currencyName',
                 'countryEmoji', 'store',
+                'has_unfulfilled_installments',
     ]
+    def get_has_unfulfilled_installments(self, obj):
+        return obj.rn_checkouts.filter(
+            payment_method="installmental_payment",
+            payment_status='pending',
+            # rn_installments__status__in=["pending", "partial"]
+        ).exists()
+
+    # def get_unfulfilled_checkout_ids(self, obj):
+    #     return list(obj.rn_checkouts.filter(
+    #         payment_method="installmental_payment",
+    #         payment_status='pending',
+    #         # rn_installments__status__in=["pending", "partial"]
+    #     ).values_list("checkoutID", flat=True))
 
 class UserSerializerWRatings(serializers.ModelSerializer):
     store = StoreSerializer(source='rn_store', many=True, read_only=True)
     product_ratings = SomeProductRatingSerializer(source='rn_product_ratings', many=True, read_only=True)
+    has_unfulfilled_installments = serializers.SerializerMethodField()
+    # unfulfilled_checkout_ids = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email',
@@ -40,7 +58,22 @@ class UserSerializerWRatings(serializers.ModelSerializer):
                 'hasStates', 'product_ratings', 'is_seller',
                 'currency', 'currencySymbol', 'currencyName',
                 'countryEmoji', 'store',
+                'has_unfulfilled_installments',
     ]
+    def get_has_unfulfilled_installments(self, obj):
+        return obj.rn_checkouts.filter(
+            payment_method="installmental_payment",
+            payment_status='pending',
+            # rn_installments__status__in=["pending", "partial"]
+        ).exists()
+
+    # def get_unfulfilled_checkout_ids(self, obj):
+    #     return list(obj.rn_checkouts.filter(
+    #         payment_method="installmental_payment",
+    #         payment_status='pending',
+    #         # rn_installments__status__in=["pending", "partial"]
+    #     ).values_list("checkoutID", flat=True))
+
 
 # class MinuteUserSerializer(serializers.ModelSerializer):
 #     store = StoreSerializer(source='rn_store', many=True, read_only=True)

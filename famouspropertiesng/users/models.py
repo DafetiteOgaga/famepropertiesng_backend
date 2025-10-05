@@ -38,6 +38,11 @@ class User(AbstractUser):
 
 	# for sellers on the app
 	is_seller = models.BooleanField(default=False)
+
+	# checkout data fields
+	# unfulfilled_installments = models.BooleanField(default=False)  # has unfulfilled installments
+	paystack_customer_id = models.CharField(max_length=100, null=True, blank=True)
+
 	class Meta:
 		ordering = ['id']
 
@@ -50,6 +55,17 @@ class User(AbstractUser):
 	def delete(self):
 		self.is_deleted = True
 		self.save()
+
+	# @property
+	# def unfulfilled_installments(self):
+	# 	return self.rn_checkouts.filter(
+	# 		payment_method="installment",
+	# 		rn_installments__status__in=["pending", "partial"]
+	# 	).exists()
+
+
+
+
 
 	# def save(self, *args, **kwargs):
 	# 	print('entering save method ###### 1')

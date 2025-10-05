@@ -31,6 +31,7 @@ ALLOWED_HOSTS = [
     'localhost', # Localhost for development
     '127.0.0.1', # Localhost for development
     'dafetitetemp.pythonanywhere.com', # PythonAnywhere temporary domain
+    # '5e30cc4a2bc4.ngrok-free.app',
 ]
 
 
