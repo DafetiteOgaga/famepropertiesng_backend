@@ -5,7 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Checkout, InstallmentPayment
 from decimal import Decimal
+from hooks.prettyprint import pretty_print_json
 from .serializers import CheckoutSerializer, InstallmentPaymentSerializer
+from .serializers import CheckoutWithProductSerializer
 
 valid_fields = [
 	# "userID", # popped from request body,
@@ -226,6 +228,7 @@ def process_successful_payment(checkout, data):
 	# print("checkout details:")
 	# pretty_print_json(CheckoutSerializer(checkout).data)
 	print("checkout products:")
+	print([ (p.product.id, p.product.name, p.quantity, p.price) for p in checkout.rn_checkout_products.all() ])
 	# pretty_print_json(CheckoutWithProductSerializer(checkout.rn_checkout_products.all(), many=True).data)
 
 	# return None
