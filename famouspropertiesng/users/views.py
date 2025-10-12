@@ -1,20 +1,21 @@
 from django.shortcuts import render
 from django.shortcuts import render, get_list_or_404, get_object_or_404
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import User
 from .serializers import UserSerializerWRatings
 import json, requests, base64
 from hooks.prettyprint import pretty_print_json
 from django.conf import settings
-# from app_bank.models import *
-# from app_bank.serializers import *
-# from app_location.models import Location
-# from app_users.serializers import UserReadHandlersSerializer
-# from .serializers import *
-# from django.contrib.auth import authenticate, login, logout, get_user_model
-# User = get_user_model()
+from hooks.cache_helpers import clear_key_and_list_in_cache, get_cache, set_cache, get_cached_response, set_cached_response
+from django.core.cache import cache
+
+cache_name = 'users'
+cache_key = None
+cached_data = None
+# paginatore_page_size = 8
 
 allowed_fields = [
 	"address",
@@ -74,6 +75,7 @@ def get_basic_auth_header():
 
 # Create your views here.
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 def users(request, pk=None):
 	if request.method == 'POST':
 		data = json.loads(request.body)
@@ -122,18 +124,52 @@ def users(request, pk=None):
 		print(f"Created new user:")
 		pretty_print_json(created_user_data)
 
+		# Invalidate cache
+		clear_key_and_list_in_cache(key=cache_name)
+
 		return Response(created_user_data, status=status.HTTP_201_CREATED)
 	else:
 		if pk:
+
+			# checking for cached
+			cached_data = get_cache(cache_name, pk=pk)
+			if cached_data:
+				return Response(cached_data, status=status.HTTP_200_OK)
+
 			user = User.objects.filter(pk=pk)
 			print(f'User: {user}')
 			if not user.exists():
 				return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-			user_data = UserSerializerWRatings(user.first()).data
+			user = user.first()
+			user_data = UserSerializerWRatings(user).data
+
+			# set cache
+			set_cache(cache_name, user.id, user_data)
+
 		else:
+
+			# Check cache first
+			cached_data, cache_key, tracked_keys = get_cached_response(
+					cache_name, request,
+					key_suffix=f"list",
+
+					# for pagination (if pagination is set up in future)
+					# key_suffix=f"{'list'}_for{('_' + all) if all == 'all' else ''}",
+					# page_size=paginatore_page_size,
+					# no_page_size=True if all == 'all' else False,
+				)
+			if cached_data:
+				return Response(cached_data, status=status.HTTP_200_OK)
+
 			users_list = User.objects.all()
 			print(f'Users List: {users_list}')
 			user_data = UserSerializerWRatings(users_list, many=True).data
+
+			# Cache the new data
+			set_cached_response(cache_name, cache_key, tracked_keys,
+									user_data # conditionally add response.data (for pagination, if set up in future)
+								)
+
 		return Response(user_data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -149,17 +185,6 @@ def updateUser(request, pk):
 
 		old_file_id = data.get("old_fileId")
 		print(f"Received old_file_id: {old_file_id}")
-		# print(f"Received file: {file}, type: {type(file)}")
-
-		# print("File uploaded successfully.")
-		# return Response({"result": "all goog"}, status=status.HTTP_201_CREATED)
-
-		# if not file_id:
-		# 	print("fileId is missing in the request.")
-		# 	return Response({"error": "fileId is required"}, status=400)
-		# if not file:
-		# 	print("No file uploaded in the request.")
-		# 	return Response({"error": "No file uploaded"}, status=400)
 
 		if old_file_id:
 			# First, delete the old file using fileId
@@ -174,41 +199,9 @@ def updateUser(request, pk):
 			print(f"delete status code: {del_resp.status_code}")
 			print("Old file deleted successfully.")
 
-			# Now, upload the new file
-			# upload_url = "https://upload.imagekit.io/api/v1/files/upload"
-			# files = {
-			# 	"file": (file.name, file.read(), file.content_type),
-			# }
-			# data = {
-			# 	"fileName": file.name,
-			# 	"useUniqueFileName": False,  # overwrite by filename
-			# }
-
-			# upload_resp = requests.post(upload_url, files=files, data=data, headers=get_basic_auth_header())
-
-			# try:
-			# 	print(f"Upload response: {upload_resp.text}")
-			# 	result = upload_resp.json()
-			# except ValueError:
-			# 	print(f"Failed to parse JSON response: {upload_resp.text}")
-			# 	return Response({"error": "Invalid JSON response", "detail": upload_resp.text}, status=upload_resp.status_code)
-
-			# if upload_resp.status_code != 200:
-			# 	print(f"File upload failed: {result}")
-			# 	return Response({"error": "File upload failed", "detail": result}, status=upload_resp.status_code)
-			# print("File uploaded successfully.")
-			# return Response(result, status=upload_resp.status_code)
-
-		# print("No file uploaded, proceeding with other updates.")
-		# return Response({"ok": "Yippy it worked!."}, status=status.HTTP_201_CREATED)
-
-		# data = request.POST.dict() if request.FILES else json.loads(request.body)
-
 		# data = json.loads(request.body)
 		print(f"Received data for updating user {pk}:")
 		pretty_print_json(data)
-
-		# return Response({"ok": "all good"}, status=status.HTTP_201_CREATED)
 
 		try:
 			user = User.objects.get(pk=pk)
@@ -236,28 +229,26 @@ def updateUser(request, pk):
 		print(f"Updated user {pk}:")
 		pretty_print_json(updated_user_data)
 
+		# Invalidate cache
+		clear_key_and_list_in_cache(key=cache_name, id=user.id)
+
 		return Response(updated_user_data, status=status.HTTP_200_OK)
-
-# @api_view(["POST"])
-# def upload_to_imagekit(request):
-#     file = request.FILES.get("file")  # get file from React formData
-#     if not file:
-#         return Response({"error": "No file uploaded"}, status=400)
-
-#     url = "https://upload.imagekit.io/api/v1/files/upload"
-#     headers = {
-#         "Authorization": "Basic " + (settings.IMAGEKIT_PRIVATE_KEY + ":").encode("ascii").decode("latin1")
-#     }
-#     files = {
-#         "file": file,  
-#         "fileName": file.name,
-#     }
-
-#     response = requests.post(url, files=files, headers=headers)
-#     return Response(response.json(), status=response.status_code)
 
 @api_view(['GET'])
 def totalUsers(request):
 	if request.method == 'GET':
+
+		# Check cache first
+		cached_data, cache_key, tracked_keys = get_cached_response(
+				cache_name, request, key_suffix=f"list_all_users",
+			)
+		if cached_data:
+			return Response(cached_data, status=status.HTTP_200_OK)
+
 		total = User.objects.count()
-		return Response({"total_users": total}, status=status.HTTP_200_OK)
+		all_users_response = {"total_users": total}
+
+		# Cache the new data
+		set_cached_response(cache_name, cache_key, tracked_keys, all_users_response, timeout=(60 * 30)) # cache for 30 minutes
+
+		return Response(all_users_response, status=status.HTTP_200_OK)
