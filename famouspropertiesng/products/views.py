@@ -10,7 +10,6 @@ from .models import Product, Category
 from django.db import transaction
 from .serializers import ProductSerializer, CategorySerializer
 from hooks.delete_object_and_image import delete_object_and_image
-from hooks.prettyprint import pretty_print_json
 from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 from hooks.cache_helpers import clear_key_and_list_in_cache, get_cache, set_cache, get_cached_response, set_cached_response
@@ -72,7 +71,7 @@ def products(request, pk=None, all=None):
 	if request.method == "POST":
 		print("Creating new product...")
 		data = json.loads(request.body)
-		pretty_print_json(data)
+		print(data)
 
 		products = []
 		try:
@@ -178,7 +177,7 @@ def products(request, pk=None, all=None):
 
 		# Serialize and return created products
 		serialized_products = ProductSerializer(products, many=True).data
-		pretty_print_json(serialized_products)
+		print(serialized_products)
 
 		# Invalidate cache
 		clear_key_and_list_in_cache(key=cache_name)
@@ -298,7 +297,7 @@ def updateProduct(request, pk):
 
 		data = json.loads(request.body)
 		print("Received update data:")
-		pretty_print_json(data)
+		print(data)
 
 		# get categories
 		categories = data.get("productCategories", None)
@@ -363,7 +362,7 @@ def updateProduct(request, pk):
 			cleaned_data[f"fileId_{i}"] = data.get(f"fileId{i}")
 
 		print("Updating fields:")
-		pretty_print_json(cleaned_data)
+		print(cleaned_data)
 
 		for field, value in cleaned_data.items():
 			setattr(product, field, value)
@@ -377,7 +376,7 @@ def updateProduct(request, pk):
 			serialized_product = ProductSerializer(product).data
 
 			print("Updated product:")
-			pretty_print_json(serialized_product)
+			print(serialized_product)
 
 			# Invalidate cache
 			clear_key_and_list_in_cache(key=cache_name, id=product.id)
@@ -592,7 +591,7 @@ def getAvailableTotal(request):
 		data = json.loads(request.body)
 		print("Received data for availability check:")
 		print(f"Data (before ppr): {data}")
-		pretty_print_json(data)
+		print(data)
 		print(f"Data (after ppr): {data}")
 
 		product_ids = data.get("productIds", [])
@@ -612,7 +611,7 @@ def getAvailableTotal(request):
 				availability.setdefault(str(pid), 0)  # Default to 0 if not found
 
 			print("Availability results:")
-			pretty_print_json(availability)
+			print(availability)
 
 			return Response(availability, status=status.HTTP_200_OK)
 		except Exception as e:
