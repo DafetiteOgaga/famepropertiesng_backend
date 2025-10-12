@@ -8,6 +8,7 @@ import json, requests, uuid, hmac, hashlib
 from django.conf import settings
 from .serializers import CheckoutSerializer, ReceiptCheckoutReceiptSerializer
 from users.models import User
+from hooks.prettyprint import pretty_print_json
 from hooks.cache_helpers import get_cache, set_cache
 from .checkout_utils import create_paystack_customer, assign_virtual_account
 from .checkout_utils import process_successful_payment, process_failed_payment
@@ -21,14 +22,14 @@ cached_data = None
 # Create your views here.
 @api_view(['GET'])
 def generate_reference(request):
-    while True:
-        reference = uuid.uuid4()
-        is_checkout = Checkout.objects.filter(checkoutID=reference).exists()
-        is_installment = InstallmentPayment.objects.filter(reference=reference).exists()
-        if not is_checkout and not is_installment:
-            reference = str(reference).replace("-", "")
-            print(f"Generated unique reference: {reference}")
-            return Response({"reference": reference}, status=status.HTTP_200_OK)
+	while True:
+		reference = uuid.uuid4()
+		is_checkout = Checkout.objects.filter(checkoutID=reference).exists()
+		is_installment = InstallmentPayment.objects.filter(reference=reference).exists()
+		if not is_checkout and not is_installment:
+			reference = str(reference).replace("-", "")
+			print(f"Generated unique reference: {reference}")
+			return Response({"reference": reference}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -166,6 +167,22 @@ def checkout_receipt_view(request, reference):
 	return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+def ch(request):
+	request_info = {
+		"method": request.method,
+		"query_params": dict(request.query_params),
+		"data": request.data,
+		"headers": dict(request.headers),
+		# "meta": request.META,
+	}
+	pretty_print_json(request_info)
+	localhost = request.headers.get('Host', None)
+	if localhost:
+		_127_0_0_1_or_lh = localhost.split(':')[0] == '127.0.0.1' or localhost.split(':')[0] == 'localhost'
+		print(f"Request from host: {_127_0_0_1_or_lh}")
+	return Response({"ok": True})
+
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def verify_paystack_payment(request, reference=None):
 	# reference = request.query_params.get("reference")
@@ -185,13 +202,16 @@ def verify_paystack_payment(request, reference=None):
 		print("Checkout not found by checkoutID, verifying with paystack...")
 		checkout = None
 
-	# print(f'DEBUG mode: {settings.DEBUG}')
-	# if settings.DEBUG:
-	# 	print("Production mode: skipping manual Paystack verification.")
-	# 	return checkout_status_fxn(reference)
-	# else:
-	# 	print("Development mode: proceeding with manual Paystack verification.")
-	# 	return checkout_status_fxn(reference)
+	print(f'DEBUG mode: {settings.DEBUG}')
+	localhost = request.headers.get('Host', None)
+	_127_0_0_1_or_lh = False
+	if localhost:
+		_127_0_0_1_or_lh = localhost.split(':')[0] == '127.0.0.1' or localhost.split(':')[0] == 'localhost'
+		print(f"Request from host: {_127_0_0_1_or_lh}")
+
+	if not _127_0_0_1_or_lh:
+		print("Production mode: proceeding with manual Paystack verification.")
+		return checkout_status_fxn(reference)
 
 	# return checkout_status_fxn(reference)
 	# If not yet verified, query Paystack’s verify endpoint
