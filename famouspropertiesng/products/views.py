@@ -591,7 +591,9 @@ def getAvailableTotal(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received data for availability check:")
+		print(f"Data (before ppr): {data}")
 		pretty_print_json(data)
+		print(f"Data (after ppr): {data}")
 
 		product_ids = data.get("productIds", [])
 		if not product_ids or not isinstance(product_ids, list):
