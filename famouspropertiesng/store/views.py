@@ -11,6 +11,13 @@ from .serializers import StoreSerializer
 from django.db import IntegrityError
 from users.models import User
 from users.serializers import UserSerializerWRatings
+from hooks.cache_helpers import clear_key_and_list_in_cache, get_cache, set_cache, get_cached_response, set_cached_response
+from django.core.cache import cache
+
+cache_name = 'store_view'
+cache_key = None
+cached_data = None
+# paginatore_page_size = 8
 
 allowed_update_fields = [
 	"userID",
@@ -65,8 +72,7 @@ def store_view(requests, pk=None):
 
 		userID = update_fields.pop("userID", None)
 		if not userID:
-			return Response({"error": "userID is required"}, status=400)
-		# return Response({"message": "Store creation is disabled"}, status=status.HTTP_200_OK)
+			return Response({"error": "userID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 		try:
 			store = Store(
@@ -80,15 +86,20 @@ def store_view(requests, pk=None):
 		except IntegrityError as e:
 			# Handle the unique constraint failure here
 			print("IntegrityError:", e)
-			return Response({"error": "Store already exists for this user."}, status=400)
+			return Response({"error": "Store already exists for this user."}, status=status.HTTP_400_BAD_REQUEST)
 
 		serialized_store = StoreSerializer(store).data
 		print(f"Created new store:")
 		pretty_print_json(serialized_store)
-		return Response(serialized_store, status=201)
+
+		# Invalidate cache
+		clear_key_and_list_in_cache(key=cache_name)
+
+		return Response(serialized_store, status=status.HTTP_201_CREATED)
 	elif requests.method == "GET":
 		serialized_store = None
 		print(f"Inside store_view GET method... with pk: {pk}")
+		# not using the get method for now
 		return Response({"message": "Store retrieval is disabled"}, status=status.HTTP_200_OK)
 		if pk:
 			try:
@@ -102,7 +113,7 @@ def store_view(requests, pk=None):
 				print(f"Fetched single store:")
 				pretty_print_json(serialized_store)
 			except Store.DoesNotExist:
-				return Response({"error": "Store not found"}, status=404)
+				return Response({"error": "Store not found"}, status=status.HTTP_404_NOT_FOUND)
 		else:
 			stores = get_list_or_404(Store)
 			serialized_store = [
@@ -116,7 +127,7 @@ def store_view(requests, pk=None):
 			print(f"Fetched all stores:")
 			pretty_print_json(serialized_store)
 
-		return Response(serialized_store, status=200)
+		return Response(serialized_store, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def update_store(request, pk):
@@ -138,67 +149,10 @@ def update_store(request, pk):
 			pretty_print_json(StoreSerializer(store).data)
 			user = User.objects.get(id=pk)
 			user_serializer = UserSerializerWRatings(user).data
+
+			# Invalidate cache
+			clear_key_and_list_in_cache(key=cache_name)
+
 			return Response(user_serializer, status=status.HTTP_200_OK)
 		except Store.DoesNotExist:
-			return Response({"error": "Store not found for this user"}, status=404)
-
-		# note that pk is user not store
-
-		# return Response({"message": "Store update is disabled"}, status=status.HTTP_200_OK)
-		# Update only allowed fields
-		# update_fields = {}
-		# data_keys = data.keys()
-		# for field in data_keys:
-		# 	if field in allowed_update_fields:
-		# 		print(f"✅ Field '{field}' allowed, adding to update_fields...")
-		# 		update_fields[field] = data[field]
-		# 	else:
-		# 		print(f"🚫 Field '{field}' not allowed, skipping...")
-
-		# print()
-		# print(f"allowed update data:")
-		# pretty_print_json(update_fields)
-
-		# store = get_object_or_404(Store, pk=pk)
-		# for key, value in update_fields.items():
-		# 	setattr(store, key, value)
-		# store.save()
-
-		# serialized_store = StoreSerializer(store).data
-		# print(f"Updated store {pk}:")
-		# pretty_print_json(serialized_store)
-		# return Response(serialized_store, status=200)
-
-@api_view(['GET'])
-def check_store_name(request, name):
-    print(f'Checking store_name: {name}')
-    exist = {
-        "boolValue": True,
-        "color": "green",
-    }
-    msg = "available"
-    isStoreNameTaken = Store.objects.filter(store_name=name)
-    if isStoreNameTaken:
-        msg = "taken"
-        exist["color"] = "#BC4B51"
-    exist["message"] = f"{name} is {msg}."
-    # pretty_print_json(exist)
-    return Response(exist, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-def check_store_email(request, email):
-    print(f'Checking store email: {email}')
-    exist = {
-        "boolValue": True,
-        "color": "green",
-    }
-    msg = "available"
-    # isStoreEmailTaken = Store.objects.filter(store_email=email)
-    # switch back to Store model after testing
-    isStoreEmailTaken = User.objects.filter(email=email)
-    if isStoreEmailTaken:
-        msg = "taken"
-        exist["color"] = "#BC4B51"
-    exist["message"] = f"{email} is {msg}."
-    # pretty_print_json(exist)
-    return Response(exist, status=status.HTTP_200_OK)
+			return Response({"error": "Store not found for this user"}, status=status.HTTP_404_NOT_FOUND)
