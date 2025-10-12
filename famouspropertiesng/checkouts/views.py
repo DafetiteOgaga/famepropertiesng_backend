@@ -8,7 +8,7 @@ import json, requests, uuid, hmac, hashlib
 from django.conf import settings
 from .serializers import CheckoutSerializer, ReceiptCheckoutReceiptSerializer
 from users.models import User
-from hooks.prettyprint import pretty_print_json
+# from hooks.prettyprint import pretty_print_json
 from hooks.cache_helpers import get_cache, set_cache
 from .checkout_utils import create_paystack_customer, assign_virtual_account
 from .checkout_utils import process_successful_payment, process_failed_payment
@@ -37,7 +37,7 @@ def checkouts(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received checkout data:")
-		pretty_print_json(data)
+		print(data)
 		cleaned_data = {key: value for key, value in data.items() if key in valid_fields}
 		for frontend_key, backend_key in field_mapping.items():
 			cleaned_data[backend_key] = data.get(frontend_key)
@@ -46,7 +46,7 @@ def checkouts(request):
 		instllPay = data.get('paymentMethod', None) == "installmental_payment"
 		print(f"userID: {userID}, pod: {pod}. installmental_payment: {instllPay}")
 		print("Cleaned data:")
-		pretty_print_json(cleaned_data)
+		print(cleaned_data)
 
 		# check if user has an account
 		if not userID and (pod or instllPay):
@@ -101,7 +101,7 @@ def checkouts(request):
 		reference = checkout_instance.checkoutID.hex
 		print(f"Generating unique reference...: {reference}")
 		serialized_checkout = CheckoutSerializer(checkout_instance).data
-		pretty_print_json(serialized_checkout)
+		print(serialized_checkout)
 		response = {
 			'reference': reference,
 			'checkout_id': checkout_instance.id,
@@ -175,7 +175,7 @@ def ch(request):
 		"headers": dict(request.headers),
 		# "meta": request.META,
 	}
-	pretty_print_json(request_info)
+	print(request_info)
 	localhost = request.headers.get('Host', None)
 	if localhost:
 		_127_0_0_1_or_lh = localhost.split(':')[0] == '127.0.0.1' or localhost.split(':')[0] == 'localhost'
@@ -222,7 +222,7 @@ def verify_paystack_payment(request, reference=None):
 	response = requests.get(url, headers=headers)
 	data = response.json()
 	print("Paystack verification response:")
-	pretty_print_json(data)
+	print(data)
 
 	if not data.get("status"):
 		print("Verification failed or invalid reference.")
@@ -230,7 +230,7 @@ def verify_paystack_payment(request, reference=None):
 
 	verification_data = data["data"]
 	print("Verification data:")
-	pretty_print_json(verification_data)
+	print(verification_data)
 	event_status = verification_data.get("status")
 	print(f"Event status: {event_status}")
 
