@@ -1,12 +1,20 @@
 import json
+try:
+    from .dont_push import mode
+    print(f"Development mode")
+except Exception as e:
+    print(f"Production mode")
+    mode = 'prod'
 
 def pretty_print_json(data):
     """
-    Takes a JSON string or Python dict/list and prints it in a pretty format.
+    Takes a JSON string or Python dict/list and prints it in.
     """
-    # If it's a string, parse it into a Python object
-    if not isinstance(data, object):
-        data = json.loads(data)
+    print(f"Pretty Print mode: {mode}")
+    if mode == 'dev':
+        if not isinstance(data, object):
+            data = json.loads(data)
 
-    # Pretty print with indentation
-    print(json.dumps(data, indent=4, sort_keys=True, default=str))
+        print(json.dumps(data, indent=4, sort_keys=True, default=str))
+    else:
+        print(data)
