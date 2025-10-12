@@ -238,36 +238,42 @@ def process_successful_payment(checkout, data):
 	print(f"Amount: {amount}, Transaction ID: {transaction_id}, Channel: {payment_channel}")
 	# Step 4: Record payment
 	if checkout.payment_method == "installmental_payment":
-		print("Installmental payment method detected.")
-		if amount > checkout.remaining_balance:
-			print(''.rjust(30, '9'))
-			print("⚠️ Overpayment detected")
-			# return Response(
-			# 	{"status": "error", "message": "Overpayment detected"},
-			# 	status=status.HTTP_400_BAD_REQUEST
-			# )
+		try:
+			print("Installmental payment method detected.")
+			if amount > checkout.remaining_balance:
+				print(''.rjust(30, '9'))
+				print("⚠️ Overpayment detected")
+				# return Response(
+				# 	{"status": "error", "message": "Overpayment detected"},
+				# 	status=status.HTTP_400_BAD_REQUEST
+				# )
 
-		installment = checkout.record_installment(reference, amount, transaction_id, payment_channel)
-		serialized_installment = InstallmentPaymentSerializer(installment).data
-		serialized_checkout = CheckoutSerializer(checkout).data
-		print(''.rjust(30, 'a'))
-		print(f"Recorded installment id: {installment.id} for checkout id: {checkout.id}")
-		# pretty_print_json(serialized_installment)
-		print(''.rjust(30, 'b'))
-		print('checkout:')
-		# pretty_print_json(serialized_checkout)
-		if installment.installment_number == 1:
-			print("First installment paid, updating stock.")
-			update_product_stock(checkout)
-		else:
-			print("Subsequent installment, stock previously updated.")
+			installment = checkout.record_installment(reference, amount, transaction_id, payment_channel)
+			serialized_installment = InstallmentPaymentSerializer(installment).data
+			serialized_checkout = CheckoutSerializer(checkout).data
+			print(''.rjust(30, 'a'))
+			print(f"Recorded installment id: {installment.id} for checkout id: {checkout.id}")
+			# pretty_print_json(serialized_installment)
+			print(''.rjust(30, 'b'))
+			print('checkout:')
+			# pretty_print_json(serialized_checkout)
+			if installment.installment_number == 1:
+				print("First installment paid, updating stock.")
+				update_product_stock(checkout)
+			else:
+				print("Subsequent installment, stock previously updated.")
 
-		return Response({
-			"status": installment.status,
-			"message": "Installment recorded",
-			"total_paid": checkout.total_paid(),
-			"receipt_url": checkout.receipt_url
-		}, status=status.HTTP_200_OK)
+			return Response({
+				"status": installment.status,
+				"message": "Installment recorded",
+				"total_paid": checkout.total_paid(),
+				"receipt_url": checkout.receipt_url
+			}, status=status.HTTP_200_OK)
+		except Exception as e:
+			print(f"Error recording installment: {e}")
+			print(''.rjust(30, 'h'))
+			print("checking for payment completion...")
+			checkout_status_fxn(reference)
 
 	elif checkout.payment_method == "pay_now":
 		print("Pay now (one-off) payment method detected.")
