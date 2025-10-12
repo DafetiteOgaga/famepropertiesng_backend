@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import ProductRating
 from users.models import User
@@ -16,7 +16,6 @@ from hooks.prettyprint import pretty_print_json
 @api_view(['POST', 'GET'])
 def productRating(request, pk=None):
 	print(f"Inside productRating view... with pk: {pk}")
-	# return Response({"message": "Product rating received"}, status=201)
 	if request.method == "POST":
 		data = json.loads(request.body)
 		print(f"Received product rating data:")
@@ -32,8 +31,6 @@ def productRating(request, pk=None):
 		print(f"Test product existence (pk=382): {testProductExist}")
 		print(f"User exists: {userExist}\nProduct exists: {productExist}")
 
-		# return Response({"message": "Product rating received"}, status=201)
-
 		# data contains info from React
 		product_rating = ProductRating.objects.create(
 			product_id=data.get("productId"),
@@ -46,7 +43,7 @@ def productRating(request, pk=None):
 		serialized_product_rating = ProductRatingSerializer(product_rating).data
 		print(f"Created new product rating:")
 		pretty_print_json(serialized_product_rating)
-		return Response(serialized_product_rating, status=201)
+		return Response(serialized_product_rating, status=status.HTTP_201_CREATED)
 
 	elif request.method == "GET":
 		serialized_product_rating = None
@@ -69,4 +66,4 @@ def productRating(request, pk=None):
 		# 	serialized_product_rating = ProductRatingSerializer(product_ratings, many=True).data
 		# 	pretty_print_json(serialized_product_rating)
 
-		return Response(user_serialized, status=200)
+		return Response(user_serialized, status=status.HTTP_200_OK)
