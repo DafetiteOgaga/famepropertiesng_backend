@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework import status
 import json
 from .models import FeatureAdvert, FeatureAdvertImage
-from hooks.prettyprint import pretty_print_json
 from hooks.delete_object_and_image import delete_object_and_image
 from hooks.custom_auth import is_staff
 from hooks.cache_helpers import clear_key_and_list_in_cache, get_cached_response, set_cached_response
@@ -29,7 +28,7 @@ def featuresAdvert(request):
 
 		data = json.loads(request.body)
 		print(f"Received featuresAdvert data:")
-		pretty_print_json(data)
+		print(data)
 
 		# check if updating image
 		file_id = data.get("fileId")
