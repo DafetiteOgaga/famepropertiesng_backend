@@ -185,13 +185,13 @@ def verify_paystack_payment(request, reference=None):
 		print("Checkout not found by checkoutID, verifying with paystack...")
 		checkout = None
 
-	print(f'DEBUG mode: {settings.DEBUG}')
-	if settings.DEBUG:
-		print("Production mode: skipping manual Paystack verification.")
-		return checkout_status_fxn(reference)
-	else:
-		print("Development mode: proceeding with manual Paystack verification.")
-		return checkout_status_fxn(reference)
+	# print(f'DEBUG mode: {settings.DEBUG}')
+	# if settings.DEBUG:
+	# 	print("Production mode: skipping manual Paystack verification.")
+	# 	return checkout_status_fxn(reference)
+	# else:
+	# 	print("Development mode: proceeding with manual Paystack verification.")
+	# 	return checkout_status_fxn(reference)
 
 	# return checkout_status_fxn(reference)
 	# If not yet verified, query Paystack’s verify endpoint
