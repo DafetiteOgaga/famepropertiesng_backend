@@ -5,7 +5,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Store
 import json, requests, base64
-from hooks.prettyprint import pretty_print_json
 from django.conf import settings
 from .serializers import StoreSerializer
 from django.db import IntegrityError
@@ -54,7 +53,7 @@ def store_view(requests, pk=None):
 		print(f"Inside store_view POST method... with pk: {pk}")
 		data = json.loads(requests.body)
 		print(f"Received store data:")
-		pretty_print_json(data)
+		print(data)
 
 		# Update only allowed fields
 		update_fields = {}
@@ -68,7 +67,7 @@ def store_view(requests, pk=None):
 
 		print()
 		print(f"allowed data:")
-		pretty_print_json(update_fields)
+		print(update_fields)
 
 		userID = update_fields.pop("userID", None)
 		if not userID:
@@ -90,7 +89,7 @@ def store_view(requests, pk=None):
 
 		serialized_store = StoreSerializer(store).data
 		print(f"Created new store:")
-		pretty_print_json(serialized_store)
+		print(serialized_store)
 
 		# Invalidate cache
 		clear_key_and_list_in_cache(key=cache_name)
@@ -111,7 +110,7 @@ def store_view(requests, pk=None):
 					"ownerId": store.owner_id,
 				}
 				print(f"Fetched single store:")
-				pretty_print_json(serialized_store)
+				print(serialized_store)
 			except Store.DoesNotExist:
 				return Response({"error": "Store not found"}, status=status.HTTP_404_NOT_FOUND)
 		else:
@@ -125,7 +124,7 @@ def store_view(requests, pk=None):
 				} for store in stores
 			]
 			print(f"Fetched all stores:")
-			pretty_print_json(serialized_store)
+			print(serialized_store)
 
 		return Response(serialized_store, status=status.HTTP_200_OK)
 
@@ -134,7 +133,7 @@ def update_store(request, pk):
 	if request.method == "POST":
 		data = json.loads(request.body)
 		print(f"Received update data for user {pk}:")
-		pretty_print_json(data)
+		print(data)
 
 		try:
 			print(f'data bf: {data}')
@@ -146,7 +145,7 @@ def update_store(request, pk):
 				setattr(store, field, value)
 			store.save()
 			# print(f"Found store for user {pk}:")
-			pretty_print_json(StoreSerializer(store).data)
+			print(StoreSerializer(store).data)
 			user = User.objects.get(id=pk)
 			user_serializer = UserSerializerWRatings(user).data
 
