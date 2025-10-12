@@ -3,7 +3,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.contrib.auth import get_user_model, authenticate
 # (Optional) Create JWT token for your app (if using DRF SimpleJWT)
@@ -18,13 +18,16 @@ from users.serializers import UserSerializerWRatings
 # from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
-# from django.views.decorators.csrf import csrf_exempt
-# from .models import Product
+# @permission_classes([AllowAny])
+# @permission_classes([IsAuthenticated])
+# @permission_classes([IsAdminUser]) # is_staff=True
+# @permission_classes([IsAuthenticatedOrReadOnly])
 
 User = get_user_model()
 
 # Create your views here.
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def google_login(request):
     token = request.data.get("token")
     try:
@@ -51,29 +54,11 @@ def google_login(request):
                 "name": name,
                 "picture": picture
             }
-        })
+        }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['POST', 'GET'])
-# def generate_signature(request):
-#     print("Generating ImageKit signature (generate_signature)...")
-#     timestamp = str(int(time.time()))
-
-#     signature = hmac.new(
-#         settings.IMAGEKIT_PRIVATE_KEY.encode(),
-#         timestamp.encode(),
-#         hashlib.sha1
-#     ).hexdigest()
-
-#     return JsonResponse({
-#         "signature": signature,
-#         "expire": timestamp,
-#         "token": settings.IMAGEKIT_PUBLIC_KEY
-#     })
-#     # return JsonResponse({"true": "true"})
-
-@api_view(['POST', 'GET'])
+@api_view(['GET'])
 def imagekit_auth(request):
     print("Generating ImageKit auth token (imagekit_auth)...")
     token = str(int(time.time()))
@@ -93,15 +78,9 @@ def imagekit_auth(request):
         "token": token,
         "expire": int(expire),  # Should be integer, not string
         "signature": signature
-    })
-    # return JsonResponse({"true": "true"})
+    }, status=status.HTTP_200_OK)
 
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def secret_data(request):
-    return Response({"message": "You are authenticated! 🎉"})
-
+@permission_classes([AllowAny])
 class CookieTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -118,84 +97,14 @@ class CookieTokenObtainPairView(TokenObtainPairView):
             return Response({"error": "No account found with this email."}, status=status.HTTP_404_NOT_FOUND)
 
         # 3. Authenticate user (checks password)
-        # print('got here#####')
         user = authenticate(request, username=email, password=password)
-        # print(f'authenticated user: {user}')
         if not user:
-            # print('incorrect password#####')
             return Response({"error": "Incorrect password."}, status=status.HTTP_404_NOT_FOUND)
-        # serializer = UserSerializer(user).data
-        # pretty_print_json(serializer)
 
         # 4. If authentication passes, use normal JWT process
         response = super().post(request, *args, **kwargs)
         data = response.data
 
-        # store refresh token in HTTP-only cookie
-        # response.set_cookie(
-        #     key="refresh_token",
-        #     value=data["refresh"],
-        #     httponly=True,       # <--- makes cookie invisible to JS
-        #     secure=False if settings.DEBUG else True, # True in prod,         # <--- only sent over HTTPS
-        #     samesite="Lax" if settings.DEBUG else "None" # "None" in prod,   # <--- prevent CSRF attacks
-        # )
-
-        # don't expose refresh in JSON anymore by removing it from response data
-        # del data["refresh"]
-
         # add user info to response
         data["user"] = UserSerializerWRatings(user).data
-        # data["rot"] = "21"
         return response
-
-@api_view(['GET'])
-def check_email(request, email):
-    print(f'Checking email: {email}')
-    exist = {
-        "boolValue": True,
-        "color": "green",
-    }
-    msg = "available"
-    user = User.objects.filter(email=email)
-    if user:
-        msg = "taken"
-        exist["color"] = "#BC4B51"
-    exist["message"] = f"{email} is {msg}."
-    # pretty_print_json(exist)
-    return Response(exist, status=status.HTTP_200_OK)
-
-# @api_view(['POST', 'GET'])
-# @csrf_exempt
-# def products(request):
-#     if request.method == "POST":
-#         data = json.loads(request.body)
-#         print(f"Received product data: {data}")
-
-#         # data contains info from React, including the uploaded image URL
-#         product = Product.objects.create(
-#             name=data.get("name"),
-#             description=data.get("description"),
-#             price=data.get("price"),
-#             image_url=data.get("image_url")  # <--- this comes from ImageKit
-#         )
-
-#         return JsonResponse({
-#             "id": product.id,
-#             "name": product.name,
-#             "description": product.description,
-#             "price": str(product.price),  # Convert Decimal to string for JSON serialization
-#             "image_url": product.image_url,
-#         }, status=201)
-#     elif request.method == "GET":
-#         products = Product.objects.all()
-#         print(f"Fetched {products.count()} products")
-#         product_list = [{
-#             "id": product.id,
-#             "name": product.name,
-#             "description": product.description,
-#             "price": str(product.price),  # Convert Decimal to string for JSON serialization
-#             "image_url": product.image_url,
-#         } for product in products]
-
-#         return JsonResponse(product_list, safe=False, status=200)
-
