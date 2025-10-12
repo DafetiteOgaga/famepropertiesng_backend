@@ -10,7 +10,6 @@ from users.models import User
 from products.models import Product
 from .serializers import ProductRatingSerializer
 from users.serializers import UserSerializerWRatings
-from hooks.prettyprint import pretty_print_json
 
 # Create your views here.
 @api_view(['POST', 'GET'])
@@ -19,7 +18,7 @@ def productRating(request, pk=None):
 	if request.method == "POST":
 		data = json.loads(request.body)
 		print(f"Received product rating data:")
-		pretty_print_json(data)
+		print(data)
 		
 
 		# check that the product, user exist before creating the rating
@@ -42,7 +41,7 @@ def productRating(request, pk=None):
 
 		serialized_product_rating = ProductRatingSerializer(product_rating).data
 		print(f"Created new product rating:")
-		pretty_print_json(serialized_product_rating)
+		print(serialized_product_rating)
 		return Response(serialized_product_rating, status=status.HTTP_201_CREATED)
 
 	elif request.method == "GET":
@@ -53,7 +52,7 @@ def productRating(request, pk=None):
 				user_serialized = UserSerializerWRatings(user).data
 				print(f"Fetched user with product ratings:")
 				# print(user.rn_product_ratings.all())
-				pretty_print_json(user_serialized)
+				print(user_serialized)
 				# product_rating = ProductRating.objects.get(pk=pk)
 				# print(f"Fetched single product rating")
 				# serialized_product_rating = ProductRatingSerializer(product_rating).data
