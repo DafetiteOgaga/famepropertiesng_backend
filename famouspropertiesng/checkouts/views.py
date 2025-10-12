@@ -186,6 +186,10 @@ def verify_paystack_payment(request, reference=None):
 		print("Checkout not found by checkoutID, verifying with paystack...")
 		checkout = None
 
+	if not settings.DEBUG:
+		print("Production mode: skipping manual Paystack verification.")
+		return checkout_status_fxn(reference)
+
 	# return checkout_status_fxn(reference)
 	# If not yet verified, query Paystack’s verify endpoint
 	headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
