@@ -96,12 +96,13 @@ class Checkout(models.Model):
 			# receipt_url=receipt_url
 		)
 		if not created:
+			print(f"Installment with reference {reference} already exists. Skipping creation.")
 			# update if webhook resent
-			installment.amount_paid = amount
-			installment.transaction_id = transaction_id
-			installment.status = "completed"
-			installment_number = self.rn_installments.count() + 1
-			installment.save()
+			# installment.amount_paid = amount
+			# installment.transaction_id = transaction_id
+			# installment.status = "completed"
+			# installment_number = self.rn_installments.count() + 1
+			# installment.save()
 
 		total_paid = self.total_paid()
 		print(f"Total paid so far: {total_paid}")

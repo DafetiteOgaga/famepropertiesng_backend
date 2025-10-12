@@ -15,6 +15,7 @@ from django.conf import settings
 from hooks.cache_helpers import clear_key_and_list_in_cache, get_cache, set_cache, get_cached_response, set_cached_response
 from django.core.cache import cache
 from datetime import datetime
+from hooks.prettyprint import pretty_print_json
 import warnings
 from django.core.paginator import UnorderedObjectListWarning
 from django.db.models import Case, When
@@ -590,9 +591,9 @@ def getAvailableTotal(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received data for availability check:")
-		print(f"Data (before ppr): {data}")
-		print(data)
-		print(f"Data (after ppr): {data}")
+		# print(f"Data (before ppr): {data}")
+		pretty_print_json(data)
+		# print(f"Data (after ppr): {data}")
 
 		product_ids = data.get("productIds", [])
 		if not product_ids or not isinstance(product_ids, list):
@@ -611,7 +612,7 @@ def getAvailableTotal(request):
 				availability.setdefault(str(pid), 0)  # Default to 0 if not found
 
 			print("Availability results:")
-			print(availability)
+			pretty_print_json(availability)
 
 			return Response(availability, status=status.HTTP_200_OK)
 		except Exception as e:

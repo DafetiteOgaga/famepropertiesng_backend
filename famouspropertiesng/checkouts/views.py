@@ -37,7 +37,7 @@ def checkouts(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received checkout data:")
-		print(f'data: {data}')
+		pretty_print_json(data)
 		cleaned_data = {key: value for key, value in data.items() if key in valid_fields}
 		for frontend_key, backend_key in field_mapping.items():
 			cleaned_data[backend_key] = data.get(frontend_key)
@@ -46,7 +46,7 @@ def checkouts(request):
 		instllPay = data.get('paymentMethod', None) == "installmental_payment"
 		print(f"userID: {userID}, pod: {pod}. installmental_payment: {instllPay}")
 		print("Cleaned data:")
-		print(f'cleaned_data: {cleaned_data}')
+		pretty_print_json(cleaned_data)
 
 		# check if user has an account
 		if not userID and (pod or instllPay):
@@ -101,7 +101,7 @@ def checkouts(request):
 		reference = checkout_instance.checkoutID.hex
 		print(f"Generating unique reference...: {reference}")
 		serialized_checkout = CheckoutSerializer(checkout_instance).data
-		print(f'serialized_checkout: {serialized_checkout}')
+		pretty_print_json(serialized_checkout)
 		response = {
 			'reference': reference,
 			'checkout_id': checkout_instance.id,
@@ -210,8 +210,9 @@ def verify_paystack_payment(request, reference=None):
 		print(f"Request from host: {_127_0_0_1_or_lh}")
 
 	if not _127_0_0_1_or_lh:
-		print("Production mode: proceeding with manual Paystack verification.")
+		print("Production mode: proceeding with Paystack Webhook verification.")
 		return checkout_status_fxn(reference)
+	print("Development mode: proceeding with manual verification.")
 
 	# return checkout_status_fxn(reference)
 	# If not yet verified, query Paystack’s verify endpoint
@@ -221,7 +222,7 @@ def verify_paystack_payment(request, reference=None):
 	response = requests.get(url, headers=headers)
 	data = response.json()
 	print("Paystack verification response:")
-	print(f'data: {data}')
+	pretty_print_json(data)
 
 	if not data.get("status"):
 		print("Verification failed or invalid reference.")
@@ -229,7 +230,7 @@ def verify_paystack_payment(request, reference=None):
 
 	verification_data = data["data"]
 	print("Verification data:")
-	print(f'verification_data: {verification_data}')
+	pretty_print_json(verification_data)
 	event_status = verification_data.get("status")
 	print(f"Event status: {event_status}")
 
