@@ -1,127 +1,38 @@
-from django.shortcuts import render, get_list_or_404, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import Checkout, CheckoutProduct, InstallmentPayment
 from products.models import Product
 from hooks.prettyprint import pretty_print_json
 import json, requests, uuid, hmac, hashlib
 from django.conf import settings
-from decimal import Decimal
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .serializers import CheckoutSerializer, CheckoutProductSerializer
-from .serializers import InstallmentPaymentSerializer, ReceiptCheckoutReceiptSerializer
-from .serializers import ReceiptCheckoutProductSerializer, ReceiptInstallmentPaymentSerializer
+from .serializers import CheckoutSerializer, ReceiptCheckoutReceiptSerializer
 from users.models import User
+from hooks.cache_helpers import get_cache, set_cache
+from .checkout_utils import create_paystack_customer, assign_virtual_account
+from .checkout_utils import process_successful_payment, process_failed_payment
+from .checkout_utils import checkout_status_fxn, valid_fields, field_mapping
 
-valid_fields = [
-	# "userID", # popped from request body,
-	"first_name",
-	"last_name",
-	"email",
-	"mobile_no",
-	"address",
-	"city",
-	"state",
-	"country",
-	# "postal_code",
-	"subtotal_amount",
-	"shipping_fee",
-	"total_amount",
-	# "payment_status",
-	"payment_method",
-	# "shipping_status",
-	# "shipping_method",
-	# "coupon_code",
-	# "receipt_url",
-	# "transaction_id",
-	# "return_or_refund_status",
-]
-
-field_mapping = {
-	"phoneCode": "phone_code",
-	"shippingCost": "shipping_fee",
-	"subTotal": "subtotal_amount",
-	"totalAmount": "total_amount",
-	"paymentMethod": "payment_method",
-}
-
-# variable names to pop from request body
-# paymentMethod: payment_method,
-# phoneCode: phone_code,
-# shippingCost: shipping_fee,
-# subTotal: subtotal_amount,
-# totalAmount: total_amount,
-# userID: user.id,
-
-def getSK():
-	response = requests.get('https://dafetiteapiendpoint.pythonanywhere.com/get-paystack-keys/sk/')
-	result = response.json()
-	# print(f'sk: {result.get("sk")}')
-	# print(f"Generated reference: {ref}")
-	return result.get("sk")
-PAYSTACK_SECRET_KEY = getSK()
-
-# create Paystack customer
-def create_paystack_customer(user):
-	"""
-	Create a Paystack customer for this user (if not already created)
-	"""
-	if user.paystack_customer_id:
-		return user.paystack_customer_id  # already exists
-
-	url = "https://api.paystack.co/customer"
-	headers = {
-		"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-		"Content-Type": "application/json"
-	}
-	payload = {
-		"email": user.email,
-		"first_name": user.first_name,
-		"last_name": user.last_name,
-		"phone": user.mobile_no,  # optional
-	}
-
-	response = requests.post(url, headers=headers, json=payload)
-	data = response.json()
-
-	if data["status"]:
-		customer_code = data["data"]["customer_code"]
-		user.paystack_customer_id = customer_code
-		user.save()
-		return customer_code
-	else:
-		raise Exception(f"Failed to create Paystack customer: {data}")
-
-# create DVA for Pay on Delivery
-def assign_virtual_account(checkout):
-	url = "https://api.paystack.co/dedicated_account/assign"
-	headers = {
-		"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",
-		"Content-Type": "application/json"
-	}
-	payload = {
-		"customer": checkout.user.paystack_customer_id,  # must exist in Paystack
-		"preferred_bank": "wema-bank",  # or providus-bank etc.
-		"first_name": checkout.user.first_name,
-		"last_name": checkout.user.last_name,
-		"email": checkout.user.email,
-	}
-	response = requests.post(url, headers=headers, json=payload)
-	data = response.json()
-
-	if data["status"]:
-		account_data = data["data"]
-		checkout.pod_account_number = account_data["account_number"]
-		checkout.pod_bank_name = account_data["bank"]["name"]
-		checkout.pod_account_name = account_data["account_name"]
-		checkout.save()
-	return data
+cache_name = 'checkouts'
+cache_key = None
+cached_data = None
+# paginatore_page_size = 8
 
 # Create your views here.
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
+def generate_reference(request):
+    while True:
+        reference = uuid.uuid4()
+        is_checkout = Checkout.objects.filter(checkoutID=reference).exists()
+        is_installment = InstallmentPayment.objects.filter(reference=reference).exists()
+        if not is_checkout and not is_installment:
+            reference = str(reference).replace("-", "")
+            print(f"Generated unique reference: {reference}")
+            return Response({"reference": reference}, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def checkouts(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
@@ -202,136 +113,20 @@ def checkouts(request):
 		return Response(response, status=status.HTTP_200_OK)
 	return Response({"message": "Checkouts endpoint is under construction."}, status=status.HTTP_200_OK)
 
-# @api_view(['GET'])
-# def generate_reference(request):
-# 	print(f'the pkey: {PAYSTACK_SECRET_KEY}')
-# 	return Response({'a':8}, status=status.HTTP_200_OK)
-# @api_view(['POST'])
-# def verify_payment(request):
-# 	if request.method == "POST":
-# 		body = json.loads(request.body)
-# 		reference = body.get("reference")
-# 		print(f"Verifying payment for reference: {reference}")
-# 		pretty_print_json(body)
-# 		# checkout_id = body.get("checkout_id")
-
-# 		headers = {
-# 			"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}",  # your test secret key
-# 			"Content-Type": "application/json",
-# 		}
-# 		url = f"https://api.paystack.co/transaction/verify/{reference}"
-
-# 		response = requests.get(url, headers=headers)
-# 		result = response.json()
-
-# 		print(f'Paystack response for reference {reference}:')
-# 		pretty_print_json(result)
-# 		if not result.get("status"):
-# 			print("Paystack API request failed")
-# 			return Response({
-# 					"status": "error",
-# 					"message": "Paystack API request failed",
-# 					"data": result
-# 				}
-# 				, status=status.HTTP_400_BAD_REQUEST)
-
-# 		data = result.get("data", {})
-# 		if data.get("status") != "success":
-# 			print("Payment verification failed or payment not successful")
-# 			return Response({
-# 					"status": "failed",
-# 					"message": "Payment verification failed or payment not successful",
-# 					"data": result
-# 				},
-# 				status=status.HTTP_400_BAD_REQUEST)
-
-# 		amount = Decimal(data["amount"]) / 100  # Paystack returns in kobo
-# 		transaction_id = data.get("id")
-
-# 		try:
-# 			checkout = Checkout.objects.get(checkoutID=reference)
-# 		except Checkout.DoesNotExist:
-# 			print("Checkout not found")
-# 			return Response({
-# 					"status": "error",
-# 					"message": "Checkout not found"
-# 				},
-# 				status=status.HTTP_404_NOT_FOUND)
-
-# 		# # detect overpayment
-# 		# if amount > checkout.remaining_balance:
-# 		# 	print("Overpayment detected")
-# 		# 	# return Response(
-# 		# 	# 	{"status": "error", "message": "Overpayment detected"},
-# 		# 	# 	status=status.HTTP_400_BAD_REQUEST
-# 		# 	# )
-
-# 		if checkout.payment_method == "installment":
-# 			# detect overpayment
-# 			if amount > checkout.remaining_balance:
-# 				print("Overpayment detected")
-# 				# return Response(
-# 				# 	{"status": "error", "message": "Overpayment detected"},
-# 				# 	status=status.HTTP_400_BAD_REQUEST
-# 				# )
-
-# 			# Create a new installment record
-# 			# installment = checkout.record_installment(reference, amount, transaction_id, data.get("receipt_url"))
-# 			# try:
-# 			installment = checkout.record_installment(reference, amount, transaction_id)
-# 			# except IntegrityError:
-# 				# print("Overpayment detected confirmed")
-# 				# return Response(
-# 				# 	{"status": "error", "message": "Overpayment detected"},
-# 				# 	status=status.HTTP_400_BAD_REQUEST
-# 				# )
-
-# 			serialized_installment = InstallmentPaymentSerializer(installment).data
-# 			serialized_checkout = CheckoutSerializer(checkout).data
-# 			print(f"Recorded installment: {installment.id} for checkout: {checkout.id}")
-# 			pretty_print_json(serialized_installment)
-# 			print('checkout:')
-# 			pretty_print_json(serialized_checkout)
-
-# 			return Response({
-# 					"status": "success",
-# 					"message": "Installment recorded",
-# 					"total_paid": checkout.total_paid(),
-# 					"receipt_url": checkout.receipt_url
-# 				}, status=status.HTTP_200_OK)
-
-# 		else:
-# 				# pay now (One-off payment)
-# 				checkout.remaining_balance = 0
-# 				checkout.payment_status = "completed"
-# 				checkout.transaction_id = transaction_id
-# 				# checkout.receipt_url = data.get("receipt_url")
-# 				checkout.save()
-
-# 				serialized_checkout = CheckoutSerializer(checkout).data
-# 				print('checkout:')
-# 				pretty_print_json(serialized_checkout)
-
-# 				return Response({
-# 						"status": "success",
-# 						"message": "Payment verified successfully",
-# 						"receipt_url": checkout.receipt_url
-# 					},
-# 					status=status.HTTP_200_OK)
-
-# 		# if result.get("data", {}).get("status") == "success":
-# 		# 	return JsonResponse({"status": "success", "data": result["data"]})
-
-# 		# return Response({"status": "failed", "data": result}, status=status.HTTP_400_BAD_REQUEST)
-# 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
 @api_view(['GET'])
 def checkout_receipt_view(request, reference):
 	"""
 	Fetch checkout receipt data by checkoutID or installment reference.
 	Returns extra details if checkout is on installments and not fully paid.
 	"""
+
+	cache_name = 'checkout_receipt_view'
+
+	# checking for cached
+	cached_data = get_cache(cache_name, pk=reference)
+	if cached_data:
+		return Response(cached_data, status=status.HTTP_200_OK)
+
 	try:
 		# Try fetching by checkoutID first
 		checkout = Checkout.objects.get(checkoutID=reference)
@@ -366,19 +161,80 @@ def checkout_receipt_view(request, reference):
 			"last_payment_reference": installment.reference if installment else None
 		}
 
+	# set cache
+	set_cache(cache_name, reference, data)
+
 	return Response(data, status=status.HTTP_200_OK)
-# Customer info (first_name, last_name, email, etc.)
 
-# Checkout/order details (subtotal_amount, shipping_fee, total_amount, remaining_balance)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_paystack_payment(request, reference=None):
+	# reference = request.query_params.get("reference")
 
-# Product list (CheckoutProduct related objects)
+	if not reference:
+		return Response({"status": "error", "message": "Reference is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Payment details (payment_method, transaction_id, status)
+	# First check if this payment was already processed by webhook
+	try:
+		print("Trying to find checkout by checkoutID...")
+		checkout = Checkout.objects.get(checkoutID=reference)
+		print(f"Found checkout with ID: {checkout.id}")
+		if checkout.payment_status == "completed":
+			print("Payment already completed, returning status.")
+			return checkout_status_fxn(reference)
+	except Checkout.DoesNotExist:
+		print("Checkout not found by checkoutID, verifying with paystack...")
+		checkout = None
 
-# Installment history (if applicable)
+	# return checkout_status_fxn(reference)
+	# If not yet verified, query Paystack’s verify endpoint
+	headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
+	url = f"https://api.paystack.co/transaction/verify/{reference}"
 
-# Replace with your own Paystack secret key
+	response = requests.get(url, headers=headers)
+	data = response.json()
+	print("Paystack verification response:")
+	pretty_print_json(data)
 
+	if not data.get("status"):
+		print("Verification failed or invalid reference.")
+		return Response({"status": "error", "message": data.get("message")}, status=status.HTTP_400_BAD_REQUEST)
+
+	verification_data = data["data"]
+	print("Verification data:")
+	pretty_print_json(verification_data)
+	event_status = verification_data.get("status")
+	print(f"Event status: {event_status}")
+
+	if event_status == "success":
+		print("Payment successful, processing...")
+		# Try to find checkout or installment again (in case webhook missed)
+		metadata = verification_data.get("metadata", {})
+		checkoutHexID = metadata.get("checkoutHexID") if metadata else None
+		print(f"checkoutHexID from metadata: {checkoutHexID}")
+
+		if not checkout:
+			print("Trying to find checkout by checkoutHexID from metadata...")
+			checkout = (
+				Checkout.objects.filter(checkoutID=checkoutHexID).first()
+				or Checkout.objects.filter(checkoutID=reference).first()
+			)
+
+		if not checkout:
+			print("Checkout not found...")
+			return Response({"status": "error", "message": "Checkout not found"}, status=status.HTTP_404_NOT_FOUND)
+
+		result = process_successful_payment(checkout, verification_data)
+		return result
+
+	elif event_status == "failed":
+		result = process_failed_payment(checkout, data)
+		return result
+	print("Event not specifically handled, ignoring.")
+	return Response({"status": "ignored", "message": f"Unhandled event {event_status}"}, status=status.HTTP_200_OK)
+
+
+@permission_classes([AllowAny])
 def verify_paystack_signature(request):
 	"""
 	Verify that the request came from Paystack using the signature.
@@ -389,7 +245,7 @@ def verify_paystack_signature(request):
 	pretty_print_json(json.loads(signature))
 	paystack_signature = request.headers.get("X-Paystack-Signature", "")
 	computed_signature = hmac.new(
-		PAYSTACK_SECRET_KEY.encode("utf-8"),
+		settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
 		msg=signature,
 		digestmod=hashlib.sha512
 	).hexdigest()
@@ -455,177 +311,27 @@ def paystack_webhook(request):
 
 	# Step 3: Handle successful payments
 	if event == "charge.success":
-		print("Processing charge.success event")
-		amount = Decimal(data.get("amount", 0)) / 100  # Paystack returns in kobo
-		transaction_id = data.get("id")
-		payment_channel = data.get("channel")  # e.g., card, bank, etc.
-
-		print(f"Amount: {amount}, Transaction ID: {transaction_id}, Channel: {payment_channel}")
-		# Step 4: Record payment
-		if checkout.payment_method == "installmental_payment":
-			print("Installmental payment method detected.")
-			if amount > checkout.remaining_balance:
-				print(''.rjust(30, '9'))
-				print("⚠️ Overpayment detected")
-				# return Response(
-				# 	{"status": "error", "message": "Overpayment detected"},
-				# 	status=status.HTTP_400_BAD_REQUEST
-				# )
-
-			installment = checkout.record_installment(reference, amount, transaction_id, payment_channel)
-			serialized_installment = InstallmentPaymentSerializer(installment).data
-			serialized_checkout = CheckoutSerializer(checkout).data
-			print(''.rjust(30, 'a'))
-			print(f"Recorded installment id: {installment.id} for checkout id: {checkout.id}")
-			# pretty_print_json(serialized_installment)
-			print(''.rjust(30, 'b'))
-			print('checkout:')
-			# pretty_print_json(serialized_checkout)
-
-			return Response({
-				"status": "success",
-				"message": "Installment recorded",
-				"total_paid": checkout.total_paid(),
-				"receipt_url": checkout.receipt_url
-			}, status=status.HTTP_200_OK)
-
-		elif checkout.payment_method == "pay_now":
-			print("Pay now (one-off) payment method detected.")
-			# pay now (One-off payment)
-			checkout.remaining_balance = 0
-			checkout.payment_status = "completed"
-			checkout.transaction_id = transaction_id
-			checkout.payment_channel = payment_channel
-			checkout.save()
-
-			serialized_checkout = CheckoutSerializer(checkout).data
-			print(''.rjust(30, 'c'))
-			print('checkout:')
-			# pretty_print_json(serialized_checkout)
-
-			return Response({
-				"status": "success",
-				"message": "Payment verified successfully",
-				"receipt_url": checkout.receipt_url
-			}, status=status.HTTP_200_OK)
-
-		elif checkout.payment_method == "pay_on_delivery":
-			print("Pay on Delivery payment method detected.")
-			# They said Pay on Delivery, but we still got a Paystack transfer
-			checkout.payment_status = "completed"
-			checkout.transaction_id = transaction_id
-			checkout.payment_channel = payment_channel
-			checkout.save()
-
-			return Response({
-				"status": "success",
-				"message": "Pay on Delivery (via transfer) confirmed",
-				"receipt_url": checkout.receipt_url
-			}, status=status.HTTP_200_OK)
+		result = process_successful_payment(checkout, data)
+		return result
 
 	# Step 5: Handle other events if needed
 	elif event == "charge.failed":
-		print("Processing charge.failed event")
-		checkout.payment_status = "failed"
-		print('changed payment_status to failed')
-		checkout.save()
+		result = process_failed_payment(checkout, data)
+		return result
 
-		try:
-			print("Trying to update installment status to failed...")
-			installment = InstallmentPayment.objects.get(reference=reference)
-			installment.styesatus = "failed"
-			installment.save()
-			print("Installment status updated to failed.")
-		except InstallmentPayment.DoesNotExist:
-			print("No associated installment found, skipping installment update.")
-			pass
-
-		return Response({
-			"status": "error",
-			"message": "Payment failed"
-		}, status=status.HTTP_200_OK)
 	print("Event not specifically handled, ignoring.")
 	return Response({"status": "ignored", "message": f"Unhandled event {event}"}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def checkout_status(request, reference):
-	try:
-		# Try fetching by checkoutID first
-		print(f"Fetching checkout status for reference: {reference}")
-		checkout = Checkout.objects.prefetch_related('rn_checkout_products').get(checkoutID=reference)
-		installment = None
-		print(f'Found checkout with ID: {checkout.id} so installment is None')
-	except Checkout.DoesNotExist:
-		print("Checkout not found, trying installment reference...")
-		# If not a checkout, maybe it's an installment reference
-		try:
-			print("Fetching by installment reference...")
-			installment = InstallmentPayment.objects.get(reference=reference)
-			checkout = installment.checkout
-		except InstallmentPayment.DoesNotExist:
-			print(f"Checkout/Installment with reference: {reference} not found.")
-			return Response(
-				{"status": "error", "message": "Checkout/Installment not found."},
-				status=status.HTTP_404_NOT_FOUND
-			)
-
-	# Decide payment status
-	print('found checkout: ', checkout.id)
-	print("Determining payment status...")
-	if checkout.payment_method == "installmental_payment":
-		print("Installmental payment method detected.")
-		
-		if installment:
-			print("Using installment status.")
-			payment_status = installment.status  # status for this specific installment
-		else:
-			print("checking if it is the first installment.")
-			installment = InstallmentPayment.objects.get(reference=reference)
-			# print(f"Found installment with ID: {installment.id} and installment_number: {installment.installment_number}")
-			if installment and installment.installment_number == 1:
-				print(f"Found installment with ID: {installment.id}")
-				payment_status = installment.status  # fallback if only checkout reference is passed
-			else:
-				print("No installment found, defaulting to checkout payment status.")
-				payment_status = checkout.payment_status
-	else:
-		print("Non-installmental payment method, using checkout payment status.")
-		payment_status = checkout.payment_status  # pay_now
-
-	# Build product details
-	productDetails = [{
-		"productId": item.product.id,
-		"productName": item.product.name,
-		"quantity": str(item.quantity),
-		"price": str(item.price),
-		"thumbnail": item.product.image_url_0
-	} for item in checkout.rn_checkout_products.all()]
-
-	# Add extra installment info if applicable
-	response_data = {
-		"status": payment_status,
-		"productDetails": productDetails,
-	}
-
-	if checkout.payment_method == "installmental_payment":
-		total_paid = checkout.total_paid()
-		remaining_balance = checkout.total_amount - total_paid
-		if remaining_balance < 0:
-			remaining_balance = 0
-
-		response_data["installment_info"] = {
-			"total_paid": str(total_paid),
-			"remaining_balance": str(remaining_balance),
-			"is_fully_paid": remaining_balance == 0,
-			"installments_count": checkout.rn_installments.count(),
-			"last_payment_reference": installment.reference if installment else None
-		}
-	print("Checkout status response:")
-	pretty_print_json(response_data)
-	return Response(response_data, status=status.HTTP_200_OK)
+	return checkout_status_fxn(reference)
 
 @api_view(['GET'])
 def installment_payment(request, reference):
+	"""
+		Fetch checkout receipt data by checkoutID or installment reference.
+		Returns extra details if checkout is on installments and fully or not fully paid.
+	"""
 	try:
 		# Try fetching by checkoutID first
 		print(f"Fetching installment payment for reference: {reference}")
@@ -634,13 +340,6 @@ def installment_payment(request, reference):
 		print(f'Found checkout with ID: {checkout.id}')
 	except Checkout.DoesNotExist:
 		# # If not found, try by installment reference
-		# print("Checkout not found, trying installment reference...")
-		# try:
-		# 	print("Fetching by installment reference...")
-		# 	installment = InstallmentPayment.objects.get(reference=reference)
-		# 	checkout = installment.checkout
-		# 	print(f"Found installment with ID: {installment.id} for checkout ID: {checkout.id}")
-		# except InstallmentPayment.DoesNotExist:
 		print(f"Checkout with reference: {reference} not found.")
 		return Response(
 			{"status": "error", "message": "Checkout not found."},
@@ -663,17 +362,6 @@ def installment_payment(request, reference):
 			print("Overpayment detected, adjusting remaining balance to 0")
 			remaining_balance = 0
 
-		# Add installment-specific info
-		# data["installment_info"] = {
-		# 	# "total_paid": total_paid,
-		# 	# "remaining_balance": remaining_balance,
-		# 	# "is_fully_paid": remaining_balance == 0,
-		# 	# "installments_count": checkout.rn_installments.count(),
-		# 	"last_payment_reference": installment.reference if installment else None
-		# }
-
-		new_payment_reference = str(uuid.uuid4()).replace("-", "")
-
 		print(f'installment count: {checkout.rn_installments.count()}')
 
 		# Add installment-specific info
@@ -683,7 +371,7 @@ def installment_payment(request, reference):
 		data["installments_count"] = checkout.rn_installments.count()
 		data["last_payment_reference"] = installment.reference if installment else None
 		data["new_payment_details"] = {
-			'reference': new_payment_reference,
+			'reference': checkout.payment_method, # continue here
 			'checkout_id': checkout.id,
 			'amount': int(remaining_balance),  # convert to kobo
 			'email': checkout.email,
@@ -732,14 +420,7 @@ def has_unfulfilled_installments(request, pk):
 			payment_status="pending"
 		).exists()
 		print(f"Pending checkouts found: {pending_checkouts}")
-		# [print(f"	- {checkout_id}") for checkout_id in list(pending_checkouts)]
-		# pretty_print_json(list(pending_checkouts))
-		# data = {
-		# 	"id": user.id,
-		# 	"email": user.email,
-		# 	"has_unfulfilled_installments": pending_checkouts.exists(),
-		# 	"unfulfilled_checkout_ids": list(pending_checkouts),
-		# }
+
 		# pretty_print_json(data)
 		return Response(pending_checkouts, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

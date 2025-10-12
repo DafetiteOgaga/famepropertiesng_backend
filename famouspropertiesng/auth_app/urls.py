@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import (
 #     TokenObtainPairView,
     TokenRefreshView,
@@ -14,8 +16,11 @@ urlpatterns = [
 	path("imagekit-auth/", views.imagekit_auth, name="imagekit_auth"),
 	# path("products/", views.products, name="product_list_create"),
 	# path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # login
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # refresh
+    path(
+        'api/token/refresh/',
+        TokenRefreshView.as_view(permission_classes=[AllowAny]),
+        name='token_refresh'
+	),  # refresh
     path("api/token/", views.CookieTokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path('secret-data/', views.secret_data, name='secret_data'),  # Example protected route
-    path("check-email/<str:email>/", views.check_email, name="check_email"),
+    # path('secret-data/', views.secret_data, name='secret_data'),  # Example protected route
 ]

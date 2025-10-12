@@ -26,7 +26,7 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'countryId','stateId','cityId', 'hasCities',
                 'hasStates', 'product_ratings', 'is_seller',
                 'currency', 'currencySymbol', 'currencyName',
-                'countryEmoji', 'store',
+                'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
     ]
     def get_has_unfulfilled_installments(self, obj):
@@ -57,7 +57,7 @@ class UserSerializerWRatings(serializers.ModelSerializer):
                 'countryId','stateId','cityId', 'hasCities',
                 'hasStates', 'product_ratings', 'is_seller',
                 'currency', 'currencySymbol', 'currencyName',
-                'countryEmoji', 'store',
+                'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
     ]
     def get_has_unfulfilled_installments(self, obj):

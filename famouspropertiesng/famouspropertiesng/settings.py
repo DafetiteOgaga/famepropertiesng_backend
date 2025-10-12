@@ -31,7 +31,7 @@ ALLOWED_HOSTS = [
     'localhost', # Localhost for development
     '127.0.0.1', # Localhost for development
     'dafetitetemp.pythonanywhere.com', # PythonAnywhere temporary domain
-    # '5e30cc4a2bc4.ngrok-free.app',
+    # '633e5002c72f.ngrok-free.app'
 ]
 
 
@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'search_app',		# <- added startapp here
     'checkouts',		# <- added startapp here
     'store',		# <- added startapp here
     'productrating',		# <- added startapp here
@@ -160,18 +161,33 @@ STATIC_ROOT = BASE_DIR / 'static' # this should be auto added in startproject co
 # ]
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
+    "DEFAULT_AUTHENTICATION_CLASSES": ( # tells DRF how to handle authentication (i.e use JWTAuthentication)
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    'DEFAULT_PERMISSION_CLASSES': [ # default permission for all views (but overridden in individual views)
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'EXCEPTION_HANDLER': 'custom_permissions.permissions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),   # default 5, now 15
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),     # default 1, now 7 days
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),   # default 5, now 15
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),     # default 1, now 7 days
     "ROTATE_REFRESH_TOKENS": True,                   # issue a new refresh each time
     "BLACKLIST_AFTER_ROTATION": True,                # block old refresh after rotation
 }
 
+CACHES = {
+	'default': {
+		'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+		'LOCATION': 'unique-snowflake',
+        'TIMEOUT': None,  # Cache never expires unless explicitly set per view
+	}
+}
+
+ps_response = requests.get('https://dafetiteapiendpoint.pythonanywhere.com/get-paystack-keys/sk/')
+ps_data = ps_response.json()
+PAYSTACK_SECRET_KEY = ps_data.get('sk') # extract the secret key
 response = requests.get("https://dafetiteapiendpoint.pythonanywhere.com/get-imagekit-apis/")
 data = response.json()
 IMAGEKIT_PRIVATE_KEY = data.get("IMAGEKIT_PRIVATE_KEY")  # extract the private key

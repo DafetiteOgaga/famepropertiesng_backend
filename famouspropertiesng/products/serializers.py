@@ -37,3 +37,14 @@ class CategorySerializer(serializers.ModelSerializer):
 		# Recursively serialize children
 		children = obj.rn_subcategories.all()
 		return CategorySerializer(children, many=True).data
+
+class ProductWOCatSerializer(serializers.ModelSerializer):
+	# category = CategoryMiniSerializer(many=True, read_only=True)
+	# store = StoreSerializer(read_only=True)
+	# prod_ratings = SomeProductRatingSerializer(source='rn_prod_ratings', many=True, read_only=True)
+	# total_liked = serializers.SerializerMethodField()
+	# total_reviewed = serializers.SerializerMethodField()
+	class Meta:
+		model = Product
+		# fields = '__all__'
+		exclude = ['category']

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 
 # fulldesc = """Eos no lorem eirmod diam diam, eos elitr et gubergren diam sea. Consetetur vero aliquyam invidunt duo dolores et duo sit. Vero diam ea vero et dolore rebum, dolor rebum eirmod consetetur invidunt sed sed et, lorem duo et eos elitr, sadipscing kasd ipsum rebum diam. Dolore diam stet rebum sed tempor kasd eirmod. Takimata kasd ipsum accusam sadipscing, eos dolores sit no ut diam consetetur duo justo est, sit sanctus diam tempor aliquyam eirmod nonumy rebum dolor accusam, ipsum kasd eos consetetur at sit rebum, diam kasd invidunt tempor lorem, ipsum lorem elitr sanctus eirmod takimata dolor ea invidunt.
 # Dolore magna est eirmod sanctus dolor, amet diam et eirmod et ipsum. Amet dolore tempor consetetur sed lorem dolor sit lorem tempor. Gubergren amet amet labore sadipscing clita clita diam clita. Sea amet et sed ipsum lorem elitr et, amet et labore voluptua sit rebum. Ea erat sed et diam takimata sed justo. Magna takimata justo et amet magna et.
@@ -42,6 +43,31 @@ class Product(models.Model):
         related_name='rn_category_products',
         blank=True  # A product can exist without a category
     )
+
+    def reduce_stock(self, qty: int):
+        """
+        Atomically reduce stock and log the before/after values.
+        Safe for concurrent updates.
+        """
+        if qty <= 0:
+            print(f"[{self.name}] Invalid quantity ({qty}). Skipping update.")
+            return
+
+        # Capture the current (initial) quantity from the instance
+        initial_qty = self.numberOfItemsAvailable
+
+        # Perform atomic update directly in the DB
+        updated = Product.objects.filter(
+            id=self.id,
+            numberOfItemsAvailable__gte=qty
+        ).update(numberOfItemsAvailable=F('numberOfItemsAvailable') - qty)
+
+        if updated:
+            # Refresh from database to get the new updated value
+            self.refresh_from_db(fields=['numberOfItemsAvailable'])
+            print(f"[{self.name}] Stock reduced: {initial_qty} → {self.numberOfItemsAvailable} (-{qty})")
+        else:
+            print(f"[{self.name}] Not enough stock. Available: {initial_qty}, Requested: {qty}. No change made.")
 
     def __str__(self):
         return self.name
