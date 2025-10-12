@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Checkout, InstallmentPayment
 from decimal import Decimal
-from hooks.prettyprint import pretty_print_json
+# from hooks.prettyprint import pretty_print_json
 from .serializers import CheckoutSerializer, InstallmentPaymentSerializer
 from .serializers import CheckoutWithProductSerializer
 
