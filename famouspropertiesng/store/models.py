@@ -25,12 +25,12 @@ class Store(models.Model):
 		related_name="rn_store",       # Access with user.store
 		null=True, # remove later      # A store can exist without a user
 	)
-	store_name = models.CharField(max_length=255, unique=True)  # Unique store identity
+	store_name = models.CharField(max_length=255, unique=True, db_index=True)  # Unique store identity
 	description = models.TextField(blank=True, null=True)       # About the store
 
 	# # Contact Info
 	store_phone_number = models.CharField(max_length=20, blank=True, null=True)
-	store_email_address = models.EmailField(blank=True, null=True)
+	store_email_address = models.EmailField(db_index=True, blank=True, null=True)
 	store_address = models.TextField(blank=True, null=True)           # Physical address
 	nearest_bus_stop = models.CharField(max_length=200, null=True, blank=True)
 
