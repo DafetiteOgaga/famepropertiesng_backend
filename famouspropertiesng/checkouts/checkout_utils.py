@@ -4,7 +4,6 @@ from hooks.cache_helpers import get_cache, set_cache
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Checkout, InstallmentPayment
-from hooks.prettyprint import pretty_print_json
 from decimal import Decimal
 from .serializers import CheckoutSerializer, InstallmentPaymentSerializer
 
@@ -186,7 +185,7 @@ def checkout_status_fxn(reference):
 			"last_payment_reference": installment.reference if installment else None
 		}
 	print("Checkout status response:")
-	pretty_print_json(response_data)
+	print(f'response_data: {response_data}')
 
 	# set cache
 	if payment_status == "completed":

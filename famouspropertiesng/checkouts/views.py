@@ -4,7 +4,6 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import Checkout, CheckoutProduct, InstallmentPayment
 from products.models import Product
-from hooks.prettyprint import pretty_print_json
 import json, requests, uuid, hmac, hashlib
 from django.conf import settings
 from .serializers import CheckoutSerializer, ReceiptCheckoutReceiptSerializer
@@ -37,7 +36,7 @@ def checkouts(request):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received checkout data:")
-		pretty_print_json(data)
+		print(f'data: {data}')
 		cleaned_data = {key: value for key, value in data.items() if key in valid_fields}
 		for frontend_key, backend_key in field_mapping.items():
 			cleaned_data[backend_key] = data.get(frontend_key)
@@ -46,7 +45,7 @@ def checkouts(request):
 		instllPay = data.get('paymentMethod', None) == "installmental_payment"
 		print(f"userID: {userID}, pod: {pod}. installmental_payment: {instllPay}")
 		print("Cleaned data:")
-		pretty_print_json(cleaned_data)
+		print(f'cleaned_data: {cleaned_data}')
 
 		# check if user has an account
 		if not userID and (pod or instllPay):
@@ -101,7 +100,7 @@ def checkouts(request):
 		reference = checkout_instance.checkoutID.hex
 		print(f"Generating unique reference...: {reference}")
 		serialized_checkout = CheckoutSerializer(checkout_instance).data
-		# pretty_print_json(serialized_checkout)
+		print(f'serialized_checkout: {serialized_checkout}')
 		response = {
 			'reference': reference,
 			'checkout_id': checkout_instance.id,
@@ -198,7 +197,7 @@ def verify_paystack_payment(request, reference=None):
 	response = requests.get(url, headers=headers)
 	data = response.json()
 	print("Paystack verification response:")
-	pretty_print_json(data)
+	print(f'data: {data}')
 
 	if not data.get("status"):
 		print("Verification failed or invalid reference.")
@@ -206,7 +205,7 @@ def verify_paystack_payment(request, reference=None):
 
 	verification_data = data["data"]
 	print("Verification data:")
-	pretty_print_json(verification_data)
+	print(f'verification_data: {verification_data}')
 	event_status = verification_data.get("status")
 	print(f"Event status: {event_status}")
 
@@ -246,7 +245,7 @@ def verify_paystack_signature(request):
 	signature = request.body
 	print(''.rjust(30, '0'))
 	print(f'request body:')
-	pretty_print_json(json.loads(signature))
+	print(f'signature: {signature}')
 	paystack_signature = request.headers.get("X-Paystack-Signature", "")
 	computed_signature = hmac.new(
 		settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
@@ -265,19 +264,19 @@ def paystack_webhook(request):
 	# Step 2: Parse JSON payload
 	payload = json.loads(request.body)
 	print(''.rjust(30, '1'))
-	pretty_print_json(payload)
+	print(f'payload: {payload}')
 	event = payload.get("event")
 	print(''.rjust(30, '2'))
 	print(f'event: {event}')
 	data = payload.get("data", {})
 	print(''.rjust(30, '3'))
-	pretty_print_json(data)
+	print(f'data: {data}')
 	reference = data.get("reference")
 	print(''.rjust(30, '4'))
 	print(f'reference: {reference}')
 	metadata = data.get("metadata", {})
 	print(''.rjust(30, 'e'))
-	pretty_print_json(metadata)
+	print(f'metadata: {metadata}')
 	checkoutHexID = metadata.get("checkoutHexID") if metadata else None
 
 	print(f"Received webhook for event: {event}, reference: {reference}, checkoutHexID: {checkoutHexID}")
@@ -353,7 +352,7 @@ def installment_payment(request, reference):
 	# Base checkout serialization
 	data = ReceiptCheckoutReceiptSerializer(checkout).data
 	print("Base checkout data:")
-	# pretty_print_json(data)
+	print(f'data: {data}')
 
 	# If installment payment method, calculate progress
 	if checkout.payment_method == "installmental_payment":
@@ -382,7 +381,7 @@ def installment_payment(request, reference):
 			'checkout_reference': checkout.checkoutID.hex,
 		}
 		print("Final data with installment info:")
-		# pretty_print_json(data)
+		print(f'data: {data}')
 
 	return Response(data, status=status.HTTP_200_OK)
 
@@ -400,14 +399,14 @@ def get_unfulfilled_checkout_ids(request, pk):
 		).values_list("checkoutID", flat=True)
 		print(f"Pending checkouts found:")
 		[print(f"	- {checkout_id}") for checkout_id in list(pending_checkouts)]
-		# pretty_print_json(list(pending_checkouts))
+		# print(f'list(pending_checkouts): {list(pending_checkouts)}')
 		data = {
 			"id": user.id,
 			"email": user.email,
 			"has_unfulfilled_installments": pending_checkouts.exists(),
 			"unfulfilled_checkout_ids": list(pending_checkouts),
 		}
-		# pretty_print_json(data)
+		print(f'data: {data}')
 		return Response(data, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -425,7 +424,7 @@ def has_unfulfilled_installments(request, pk):
 		).exists()
 		print(f"Pending checkouts found: {pending_checkouts}")
 
-		# pretty_print_json(data)
+		# print(f'data: {data}')
 		return Response(pending_checkouts, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 

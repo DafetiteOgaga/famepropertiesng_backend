@@ -8,7 +8,6 @@ from rest_framework import status
 from django.contrib.auth import get_user_model, authenticate
 # (Optional) Create JWT token for your app (if using DRF SimpleJWT)
 from rest_framework_simplejwt.tokens import RefreshToken
-from hooks.prettyprint import pretty_print_json
 import base64, hmac, hashlib, time, json
 from django.http import JsonResponse
 from django.conf import settings
@@ -39,7 +38,7 @@ def google_login(request):
         name = idinfo.get("name")
         picture = idinfo.get("picture")
         print(f"Google user info")
-        pretty_print_json(idinfo)
+        print(f'idinfo: {idinfo}')
 
         # Get or create local user
         user, _ = User.objects.get_or_create(email=email, defaults={"username": name})
