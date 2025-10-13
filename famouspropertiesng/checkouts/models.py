@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, IntegrityError
 import uuid
 from django.db.models import Sum
 from django.urls import reverse
@@ -85,24 +85,33 @@ class Checkout(models.Model):
 	def total_paid(self):
 		return self.rn_installments.aggregate(total=Sum("amount_paid"))["total"] or 0
 	def record_installment(self, reference, amount, transaction_id, payment_channel):
-		installment, created = InstallmentPayment.objects.get_or_create(
-			checkout=self,
-			reference=reference,
-			amount_paid=amount,
-			status="completed",
-			transaction_id=transaction_id,
-			payment_channel=payment_channel,
-			installment_number=self.rn_installments.count() + 1,
-			# receipt_url=receipt_url
-		)
-		if not created:
-			print(f"Installment with reference {reference} already exists. Skipping creation.")
-			# update if webhook resent
-			# installment.amount_paid = amount
-			# installment.transaction_id = transaction_id
-			# installment.status = "completed"
-			# installment_number = self.rn_installments.count() + 1
-			# installment.save()
+		try:
+			print("".rjust(50, "="))
+			print(f"Recording installment payment for checkout {self.checkoutID.hex}")
+			installment, created = InstallmentPayment.objects.get_or_create(
+				checkout=self,
+				reference=reference,
+				amount_paid=amount,
+				status="completed",
+				transaction_id=transaction_id,
+				payment_channel=payment_channel,
+				installment_number=self.rn_installments.count() + 1,
+				# receipt_url=receipt_url
+			)
+			if not created:
+				print("".rjust(50, "-"))
+				print(f"Installment with reference {reference} already exists. Skipping creation.")
+				# update if webhook resent
+				# installment.amount_paid = amount
+				# installment.transaction_id = transaction_id
+				# installment.status = "completed"
+				# installment.installment_number = self.rn_installments.count() + 1
+				# installment.save()
+		except IntegrityError:
+			print("".rjust(50, "+"))
+			print(f"Duplicate installment reference detected: {reference}")
+			installment = InstallmentPayment.objects.get(reference=reference)
+			return installment
 
 		total_paid = self.total_paid()
 		print(f"Total paid so far: {total_paid}")
