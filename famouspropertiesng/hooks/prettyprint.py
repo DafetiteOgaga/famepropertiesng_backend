@@ -10,7 +10,7 @@ def pretty_print_json(data):
     """
     Takes a JSON string or Python dict/list and prints it in.
     """
-    print(f"Pretty Print mode: {mode}")
+    # print(f"Pretty Print mode: {mode}")
     if mode == 'dev':
         if not isinstance(data, object):
             data = json.loads(data)
