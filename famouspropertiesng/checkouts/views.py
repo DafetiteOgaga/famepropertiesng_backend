@@ -448,7 +448,6 @@ def has_unfulfilled_installments_and_or_unsettled_delivery_payments(request, pk)
 		print(f"Pending checkouts found:")
 		pretty_print_json(response)
 
-		# print(f'data: {data}')
 		return Response(response, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
