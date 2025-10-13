@@ -59,25 +59,25 @@ def checkouts(request):
 			}, status=status.HTTP_400_BAD_REQUEST)
 		checkout_instance = Checkout.objects.create(user_id=userID, **cleaned_data)
 
-		if checkout_instance.payment_method == "pay_on_delivery":
-			try:
-				user = checkout_instance.user
-				if user and not user.paystack_customer_id:
-					create_paystack_customer(user)
-				assign_virtual_account(checkout_instance)
-				return Response({
-					"status": "success",
-					"message": "Dedicated virtual account created for POD",
-					"bank_name": checkout_instance.pod_bank_name,
-					"account_number": checkout_instance.pod_account_number,
-					"account_name": checkout_instance.pod_account_name,
-				}, status=status.HTTP_200_OK)
-			except Exception as e:
-				print(f"Error assigning virtual account: {e}")
-				return Response({
-					"status": "error",
-					"message": "Failed to assign virtual account for POD"
-				}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+		# if checkout_instance.payment_method == "pay_on_delivery":
+		# 	try:
+		# 		user = checkout_instance.user
+		# 		if user and not user.paystack_customer_id:
+		# 			create_paystack_customer(user)
+		# 		assign_virtual_account(checkout_instance)
+		# 		return Response({
+		# 			"status": "success",
+		# 			"message": "Dedicated virtual account created for POD",
+		# 			"bank_name": checkout_instance.pod_bank_name,
+		# 			"account_number": checkout_instance.pod_account_number,
+		# 			"account_name": checkout_instance.pod_account_name,
+		# 		}, status=status.HTTP_200_OK)
+		# 	except Exception as e:
+		# 		print(f"Error assigning virtual account: {e}")
+		# 		return Response({
+		# 			"status": "error",
+		# 			"message": "Failed to assign virtual account for POD"
+		# 		}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 		cart_details = data.get("cartDetails", [])
 		for product in cart_details:
@@ -99,13 +99,13 @@ def checkouts(request):
 				print("Product ID is missing in cart details.")
 		print(f"Created checkout with ID: {checkout_instance.id}")
 		reference = checkout_instance.checkoutID.hex
-		print(f"Generating unique reference...: {reference}")
+		print(f"Generating unique reference...")
 		serialized_checkout = CheckoutSerializer(checkout_instance).data
 		pretty_print_json(serialized_checkout)
 		response = {
 			'reference': reference,
 			'checkout_id': checkout_instance.id,
-			'amount': int(checkout_instance.total_amount),  # convert to kobo
+			'amount': int(checkout_instance.total_amount),
 			'email': checkout_instance.email,
 			'payment_method': checkout_instance.payment_method,
 		}
@@ -339,7 +339,7 @@ def checkout_status(request, reference):
 	return checkout_status_fxn(reference)
 
 @api_view(['GET'])
-def installment_payment(request, reference):
+def fetch_checkout_details(request, reference):
 	"""
 		Fetch checkout receipt data by checkoutID or installment reference.
 		Returns extra details if checkout is on installments and fully or not fully paid.
@@ -395,15 +395,20 @@ def installment_payment(request, reference):
 	return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-def get_unfulfilled_checkout_ids(request, pk):
+def get_unfulfilled_checkout_ids(request, pk, type=None):
 	print(f"Received request to fetch unfulfilled checkout IDs for user ID: {pk}")
 	if request.method == 'GET':
 		print(f"Fetching unfulfilled checkout IDs for user ID: {pk}")
 		user = User.objects.get(pk=pk)
 		print(f"Found user: {user.email}")
+		operation = {
+			"method": "pay_on_delivery" if type=='pod' else "installmental_payment",
+			"has": "has_unsettled_delivery_payments" if type=='pod' else "has_unfulfilled_installments",
+			"ids": "unsettled_checkout_ids" if type=='pod' else "unfulfilled_checkout_ids",
+		}
 		pending_checkouts = Checkout.objects.filter(
 			user=user,
-			payment_method="installmental_payment",
+			payment_method=operation["method"],
 			payment_status="pending"
 		).values_list("checkoutID", flat=True)
 		print(f"Pending checkouts found:")
@@ -412,29 +417,38 @@ def get_unfulfilled_checkout_ids(request, pk):
 		data = {
 			"id": user.id,
 			"email": user.email,
-			"has_unfulfilled_installments": pending_checkouts.exists(),
-			"unfulfilled_checkout_ids": list(pending_checkouts),
+			operation["has"]: pending_checkouts.exists(),
+			operation["ids"]: list(pending_checkouts),
 		}
 		pretty_print_json(data)
 		return Response(data, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @api_view(['GET'])
-def has_unfulfilled_installments(request, pk):
+def has_unfulfilled_installments_and_or_unsettled_delivery_payments(request, pk):
 	print(f"Received request to check if unfulfilled installments for user ID: {pk}")
 	if request.method == 'GET':
 		print(f"checking for unfulfilled installments for user ID: {pk}")
 		user = User.objects.get(pk=pk)
 		print(f"Found user: {user.email}")
-		pending_checkouts = Checkout.objects.filter(
-			user=user,
-			payment_method="installmental_payment",
-			payment_status="pending"
-		).exists()
-		print(f"Pending checkouts found: {pending_checkouts}")
 
-		# print(f'data: {data}')
-		return Response(pending_checkouts, status=status.HTTP_200_OK)
+		payment_methods = {
+			"installmental_payment": "pending_installments",
+			"pay_on_delivery": "pending_delivery_payments",
+		}
+
+		response = {}
+		for method, key in payment_methods.items():
+			response[key] = Checkout.objects.filter(
+				user=user,
+				payment_method=method,
+				payment_status="pending"
+			).exists()
+
+		print(f"Pending checkouts found:")
+		pretty_print_json(response)
+
+		return Response(response, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 @api_view(['GET'])
