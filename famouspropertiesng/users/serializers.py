@@ -16,6 +16,7 @@ class ResponseUserSerializer(serializers.ModelSerializer):
     store = StoreSerializer(source='rn_store', many=True, read_only=True)
     product_ratings = SomeProductRatingSerializer(source='rn_product_ratings', many=True, read_only=True)
     has_unfulfilled_installments = serializers.SerializerMethodField()
+    has_unsettled_delivery_payments = serializers.SerializerMethodField()
     # unfulfilled_checkout_ids = serializers.SerializerMethodField()
     class Meta:
         model = User
@@ -28,12 +29,19 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'currency', 'currencySymbol', 'currencyName',
                 'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
+                'has_unsettled_delivery_payments',
     ]
     def get_has_unfulfilled_installments(self, obj):
         return obj.rn_checkouts.filter(
             payment_method="installmental_payment",
             payment_status='pending',
             # rn_installments__status__in=["pending", "partial"]
+        ).exists()
+    def get_has_unsettled_delivery_payments(self, obj):
+        return obj.rn_checkouts.filter(
+            payment_method="pay_on_delivery",
+            payment_status='pending',
+            # shipping_status__in=["shipped", "delivered"]
         ).exists()
 
     # def get_unfulfilled_checkout_ids(self, obj):
@@ -47,6 +55,7 @@ class UserSerializerWRatings(serializers.ModelSerializer):
     store = StoreSerializer(source='rn_store', many=True, read_only=True)
     product_ratings = SomeProductRatingSerializer(source='rn_product_ratings', many=True, read_only=True)
     has_unfulfilled_installments = serializers.SerializerMethodField()
+    has_unsettled_delivery_payments = serializers.SerializerMethodField()
     # unfulfilled_checkout_ids = serializers.SerializerMethodField()
     class Meta:
         model = User
@@ -59,12 +68,19 @@ class UserSerializerWRatings(serializers.ModelSerializer):
                 'currency', 'currencySymbol', 'currencyName',
                 'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
+                'has_unsettled_delivery_payments',
     ]
     def get_has_unfulfilled_installments(self, obj):
         return obj.rn_checkouts.filter(
             payment_method="installmental_payment",
             payment_status='pending',
             # rn_installments__status__in=["pending", "partial"]
+        ).exists()
+    def get_has_unsettled_delivery_payments(self, obj):
+        return obj.rn_checkouts.filter(
+            payment_method="pay_on_delivery",
+            payment_status='pending',
+            # shipping_status__in=["shipped", "delivered"]
         ).exists()
 
     # def get_unfulfilled_checkout_ids(self, obj):
