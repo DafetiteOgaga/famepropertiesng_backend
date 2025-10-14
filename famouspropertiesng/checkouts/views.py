@@ -13,6 +13,7 @@ from hooks.cache_helpers import get_cache, set_cache
 from .checkout_utils import create_paystack_customer, assign_virtual_account
 from .checkout_utils import process_successful_payment, process_failed_payment
 from .checkout_utils import checkout_status_fxn, valid_fields, field_mapping
+from .generate_rerference import generate_checkout_id
 
 cache_name = 'checkouts'
 cache_key = None
@@ -22,14 +23,9 @@ cached_data = None
 # Create your views here.
 @api_view(['GET'])
 def generate_reference(request):
-	while True:
-		reference = uuid.uuid4()
-		is_checkout = Checkout.objects.filter(checkoutID=reference).exists()
-		is_installment = InstallmentPayment.objects.filter(reference=reference).exists()
-		if not is_checkout and not is_installment:
-			reference = str(reference).replace("-", "")
-			print(f"Generated unique reference: {reference}")
-			return Response({"reference": reference}, status=status.HTTP_200_OK)
+	return Response({
+			"reference": generate_checkout_id()
+		}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -98,7 +94,7 @@ def checkouts(request):
 			else:
 				print("Product ID is missing in cart details.")
 		print(f"Created checkout with ID: {checkout_instance.id}")
-		reference = checkout_instance.checkoutID.hex
+		reference = checkout_instance.checkoutID
 		print(f"Generating unique reference...")
 		serialized_checkout = CheckoutSerializer(checkout_instance).data
 		pretty_print_json(serialized_checkout)
@@ -304,7 +300,7 @@ def paystack_webhook(request):
 			checkout = Checkout.objects.get(checkoutID=checkoutHexID)
 			print(''.rjust(30, 'f'))
 			print(f"Found checkout with ID: {checkout.id} using checkoutHexID")
-		except checkout.DoesNotExist:
+		except Checkout.DoesNotExist:
 			# Try by installment reference
 			print("Checkout not found, trying installment reference...")
 			try:
@@ -387,7 +383,7 @@ def fetch_checkout_details(request, reference):
 			'checkout_id': checkout.id,
 			'amount': int(remaining_balance),  # convert to kobo
 			'email': checkout.email,
-			'checkout_reference': checkout.checkoutID.hex,
+			'checkout_reference': checkout.checkoutID,
 		}
 		print("Final data with installment info:")
 		pretty_print_json(data)
