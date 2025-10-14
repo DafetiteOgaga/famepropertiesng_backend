@@ -2,6 +2,7 @@ from django.db import models, IntegrityError
 import uuid
 from django.db.models import Sum
 from django.urls import reverse
+from .generate_rerference import generate_checkout_id
 
 PAYMENT_STATUS_CHOICES = [
 	("pending", "Pending"),
@@ -25,7 +26,13 @@ RETURN_STATUS_CHOICES = [
 # Create your models here.
 class Checkout(models.Model):
 	# Unique identifier for the checkout
-	checkoutID = models.UUIDField(default=uuid.uuid4, db_index=True, editable=False, unique=True)
+	checkoutID = models.CharField(
+		max_length=32,
+		default=generate_checkout_id,
+		db_index=True,
+		editable=False,
+		unique=True
+	)
 
 	# If user is registered, link to user model; else, allow null for guest checkout
 	user = models.ForeignKey('users.User',
@@ -81,13 +88,13 @@ class Checkout(models.Model):
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return f"Checkout {self.email} - {self.checkoutID.hex[:8]}"
+		return f"Checkout {self.email} - {self.checkoutID[:14]}"
 	def total_paid(self):
 		return self.rn_installments.aggregate(total=Sum("amount_paid"))["total"] or 0
 	def record_installment(self, reference, amount, transaction_id, payment_channel):
 		try:
 			print("".rjust(50, "="))
-			print(f"Recording installment payment for checkout {self.checkoutID.hex}")
+			print(f"Recording installment payment for checkout {self.checkoutID}")
 			installment, created = InstallmentPayment.objects.get_or_create(
 				checkout=self,
 				reference=reference,
@@ -133,7 +140,7 @@ class Checkout(models.Model):
 		"""
 		if not self.rn_installments.exists():
 			# Case 1: one-time payment
-			return reverse("checkouts:receipt", kwargs={"reference": str(self.checkoutID.hex)})
+			return reverse("checkouts:receipt", kwargs={"reference": str(self.checkoutID)})
 		
 		# If installments exist, let the *last installment* decide
 		last_payment = self.rn_installments.order_by("-id").first()
@@ -150,7 +157,7 @@ class CheckoutProduct(models.Model):
 	price = models.DecimalField(max_digits=12, decimal_places=2)  # price at time of purchase
 
 	def __str__(self):
-		return f"{self.quantity} x {self.product.name} (Order {self.checkout.checkoutID.hex})"
+		return f"{self.quantity} x {self.product.name} (Order {self.checkout.checkoutID})"
 
 class InstallmentPayment(models.Model):
 	checkout = models.ForeignKey(Checkout, on_delete=models.CASCADE, related_name="rn_installments")
@@ -164,7 +171,7 @@ class InstallmentPayment(models.Model):
 	payment_date = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return f"Installment {self.amount_paid} for {self.checkout.checkoutID.hex}"
+		return f"Installment {self.amount_paid} for {self.checkout.checkoutID}"
 
 	@property
 	def receipt_url(self):
@@ -175,7 +182,7 @@ class InstallmentPayment(models.Model):
 		"""
 		if self.is_last_installment():
 			# Case 3: last installment → checkout receipt wins
-			return reverse("checkouts:receipt", kwargs={"reference": str(self.checkout.checkoutID.hex)})
+			return reverse("checkouts:receipt", kwargs={"reference": str(self.checkout.checkoutID)})
 		
 		# Case 2: normal installment
 		return reverse("checkouts:receipt", kwargs={"reference": str(self.reference)})

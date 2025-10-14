@@ -381,6 +381,9 @@ def updateProduct(request, pk):
 
 			# Invalidate cache
 			clear_key_and_list_in_cache(key=cache_name, id=product.id)
+			clear_key_and_list_in_cache(key=cache_name)
+			clear_key_and_list_in_cache(key='store_products')
+			clear_key_and_list_in_cache(key='query_category')
 
 			return Response(serialized_product, status=status.HTTP_200_OK)
 		except Exception as e:
