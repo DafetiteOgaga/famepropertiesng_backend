@@ -53,6 +53,7 @@ class Checkout(models.Model):
 	city = models.CharField(max_length=100, null=True, blank=True)
 	state = models.CharField(max_length=100, null=True, blank=True)
 	country = models.CharField(max_length=100, null=True, blank=True)
+	currencySym = models.CharField(max_length=20, null=True, blank=True)
 	# postal_code = models.CharField(max_length=20, null=True, blank=True)
 
 	# Order details

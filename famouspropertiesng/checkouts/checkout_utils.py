@@ -8,6 +8,7 @@ from decimal import Decimal
 # from hooks.prettyprint import pretty_print_json
 from .serializers import CheckoutSerializer, InstallmentPaymentSerializer
 from .serializers import CheckoutWithProductSerializer
+from notifications.firebase_setup.firebase_notification_utils import send_fcm_notification_bulk
 
 valid_fields = [
 	# "userID", # popped from request body,
@@ -266,6 +267,9 @@ def process_successful_payment(checkout, data):
 		else:
 			print("Subsequent installment, stock previously updated.")
 
+		# notify all staff users about new order
+		notify_staff_user(installment)
+
 		return Response({
 			"status": installment.status,
 			"message": "Installment recorded",
@@ -289,6 +293,9 @@ def process_successful_payment(checkout, data):
 		print('checkout:')
 		# pretty_print_json(serialized_checkout)
 
+		# notify all staff users about new order
+		notify_staff_user(checkout)
+
 		return Response({
 			"status": checkout.payment_status,
 			"message": "Payment verified successfully",
@@ -304,6 +311,9 @@ def process_successful_payment(checkout, data):
 		checkout.save()
 
 		update_product_stock(checkout)
+
+		# notify all staff users about new order
+		notify_staff_user(checkout)
 
 		return Response({
 			"status": checkout.payment_status,
@@ -337,3 +347,48 @@ def process_failed_payment(checkout, data):
 		"status": "error",
 		"message": "Payment failed"
 	}, status=status.HTTP_200_OK)
+
+# notify all staff users about new order helper
+def is_checkout(obj):
+	return isinstance(obj, Checkout)
+
+def notify_staff_user(checkout_instance):
+	check_type = 'checkout' if is_checkout(checkout_instance) else 'installment'
+	id = checkout_instance.checkoutID if check_type != 'installment' else checkout_instance.reference
+	titleTxt = "New Order Placed" if check_type != 'installment' else "New Installment Paid"
+	bodyTxt = "just placed an order worth" if check_type != 'installment' else "just paid an installment of"
+	first_name = checkout_instance.first_name if check_type != 'installment' else checkout_instance.checkout.first_name
+	currency = checkout_instance.currencySym if check_type != 'installment' else checkout_instance.checkout.currencySym
+	amount = checkout_instance.total_amount if check_type != 'installment' else checkout_instance.amount_paid
+	shipping_status = checkout_instance.shipping_status if check_type != 'installment' else checkout_instance.checkout.shipping_status
+	userID = (checkout_instance.user.id if checkout_instance.user else None) if check_type != 'installment' else (checkout_instance.checkout.user.id if checkout_instance.checkout.user else None)
+	last_name = (checkout_instance.last_name if checkout_instance.last_name else None) if check_type != 'installment' else (checkout_instance.checkout.last_name if checkout_instance.checkout.last_name else None)
+	email = checkout_instance.email if check_type != 'installment' else checkout_instance.checkout.email
+	phone_code = checkout_instance.phone_code if check_type != 'installment' else checkout_instance.checkout.phone_code
+	mobile_no = checkout_instance.mobile_no if check_type != 'installment' else checkout_instance.checkout.mobile_no
+	subtotal_amount = checkout_instance.subtotal_amount if check_type != 'installment' else checkout_instance.checkout.subtotal_amount
+	shipping_fee = checkout_instance.shipping_fee if check_type != 'installment' else checkout_instance.checkout.shipping_fee
+	total_amount = checkout_instance.total_amount if check_type != 'installment' else checkout_instance.checkout.total_amount
+	amount_paid = checkout_instance.total_amount if check_type != 'installment' else checkout_instance.amount_paid
+	print("".rjust(30, 'y'))
+	print(f"currency: {currency}, amount: {amount}")
+	send_fcm_notification_bulk({
+		"id": id,
+		"title": f"{titleTxt} - {id[:8]}",
+		"body": f"{first_name} {bodyTxt} {currency}{amount}.",
+		"shipping_status": shipping_status,
+		"user": {
+			"id": userID,
+			"first_name": first_name,
+			"last_name": last_name,
+			"email": email,
+			"phone_code": phone_code,
+			"mobile_no": mobile_no,
+		},
+		"amount": {
+			"paid": str(amount_paid),
+			"subtotal": str(subtotal_amount),
+			"shipping_fee": str(shipping_fee),
+			"total": str(total_amount),
+		}
+	})
