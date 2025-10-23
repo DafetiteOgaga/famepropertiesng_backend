@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'notifications',		# <- added startapp here
     'search_app',		# <- added startapp here
     'checkouts',		# <- added startapp here
     'store',		# <- added startapp here
@@ -171,8 +172,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),   # default 5, now 15
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),     # default 1, now 7 days
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),   # default 5, now 15 minutes
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),     # default 1, now 14 days
     "ROTATE_REFRESH_TOKENS": True,                   # issue a new refresh each time
     "BLACKLIST_AFTER_ROTATION": True,                # block old refresh after rotation
 }
@@ -204,4 +205,4 @@ IMAGEKIT_URL_ENDPOINT = data.get("IMAGEKIT_URL_ENDPOINT")  # extract the endpoin
 #     "https://yourdomain.com",  # production domain
 # ]
 
-# print(f"django dev: {os.environ.get('DJANGO_DEVELOPMENT')}")
+
