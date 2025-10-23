@@ -30,7 +30,7 @@ class ResponseUserSerializer(serializers.ModelSerializer):
                 'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
                 'has_unsettled_delivery_payments',
-    ]
+                'lga', 'subArea',    ]
     def get_has_unfulfilled_installments(self, obj):
         return obj.rn_checkouts.filter(
             payment_method="installmental_payment",
@@ -69,6 +69,7 @@ class UserSerializerWRatings(serializers.ModelSerializer):
                 'countryEmoji', 'store', 'is_superuser',
                 'has_unfulfilled_installments',
                 'has_unsettled_delivery_payments',
+                'lga', 'subArea',
     ]
     def get_has_unfulfilled_installments(self, obj):
         return obj.rn_checkouts.filter(
