@@ -19,6 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # For featuressadvert configuration
+    path('', include('notifications.urls')),     # For notifications configuration
     path('', include('search_app.urls')),     # For search_app configuration
     path('', include('checkouts.urls')),     # For checkouts configuration
     path('store/', include('store.urls')),     # For store configuration

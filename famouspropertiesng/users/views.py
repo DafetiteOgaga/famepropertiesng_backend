@@ -8,6 +8,7 @@ from .models import User
 from .serializers import UserSerializerWRatings
 import json, requests, base64
 from django.conf import settings
+from hooks.prettyprint import pretty_print_json
 from hooks.cache_helpers import clear_key_and_list_in_cache, get_cache, set_cache, get_cached_response, set_cached_response
 from django.core.cache import cache
 
@@ -41,6 +42,8 @@ allowed_fields = [
 	"currencySymbol",
 	"currencyName",
 	"countryEmoji",
+	"lga",
+	"subArea",
 ]
 
 allowed_update_fields = [
@@ -66,6 +69,8 @@ allowed_update_fields = [
 	"currencySymbol",
 	"currencyName",
 	"countryEmoji",
+	"lga",
+	"subArea",
 ]
 
 def get_basic_auth_header():
@@ -79,7 +84,7 @@ def users(request, pk=None):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print(f"Received data for new user:")
-		print(data)
+		pretty_print_json(data)
 
 		# return Response({"ok": "all good"}, status=status.HTTP_201_CREATED)
 
@@ -95,7 +100,7 @@ def users(request, pk=None):
 				print(f"🚫 Field '{field}' not in received data.")
 
 		print(f"Filtered user data to be saved:")
-		print(user_data)
+		pretty_print_json(user_data)
 
 		checkEmail = data["email"]
 		print(f"Checking email: {checkEmail}")
@@ -121,7 +126,7 @@ def users(request, pk=None):
 
 		print()
 		print(f"Created new user:")
-		print(created_user_data)
+		pretty_print_json(created_user_data)
 
 		# Invalidate cache
 		clear_key_and_list_in_cache(key=cache_name)
@@ -200,7 +205,7 @@ def updateUser(request, pk):
 
 		# data = json.loads(request.body)
 		print(f"Received data for updating user {pk}:")
-		print(data)
+		pretty_print_json(data)
 
 		try:
 			user = User.objects.get(pk=pk)
@@ -221,12 +226,15 @@ def updateUser(request, pk):
 		for field, value in update_fields.items():
 			setattr(user, field, value)
 
+		print(f"User before saving:")
+		pretty_print_json(user.__dict__)
+		# return Response({"ok": "all good"}, status=status.HTTP_423_LOCKED)
 		user.save()
 		updated_user_data = UserSerializerWRatings(user).data
 
 		print()
 		print(f"Updated user {pk}:")
-		print(updated_user_data)
+		pretty_print_json(updated_user_data)
 
 		# Invalidate cache
 		clear_key_and_list_in_cache(key=cache_name, id=user.id)

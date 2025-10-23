@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from productrating.serializers import SomeProductRatingSerializer
-from store.serializers import StoreSerializer
+from store.serializers import StoreSerializer, StoreWOUserSerializer
 
 # Create your serializers here.
 class CategoryMiniSerializer(serializers.ModelSerializer):
@@ -48,3 +48,9 @@ class ProductWOCatSerializer(serializers.ModelSerializer):
 		model = Product
 		# fields = '__all__'
 		exclude = ['category']
+
+class ProductWTotalNumAndStoreSerializer(serializers.ModelSerializer):
+	store = StoreWOUserSerializer(read_only=True)
+	class Meta:
+		model = Product
+		fields = ['id', 'name', 'numberOfItemsAvailable', 'store']

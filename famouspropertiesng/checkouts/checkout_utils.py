@@ -25,6 +25,8 @@ valid_fields = [
 	"total_amount",
 	# "payment_status",
 	"payment_method",
+	"lga",
+	"subArea",
 	# "shipping_status",
 	# "shipping_method",
 	# "coupon_code",

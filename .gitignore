@@ -28,3 +28,7 @@ famouspropertiesng/custom_permissions/__pycache__
 famouspropertiesng/search_app/migrations/__pycache__
 famouspropertiesng/search_app/__pycache__
 famouspropertiesng/hooks/dont_push.py
+famouspropertiesng/notifications/firebase_setup/__pycache__
+famouspropertiesng/notifications/migrations/__pycache__
+famouspropertiesng/notifications/__pycache__
+famouspropertiesng/notifications/firebase_setup/online-store-staff-firebase-adminsdk.json

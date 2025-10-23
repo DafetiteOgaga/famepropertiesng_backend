@@ -23,3 +23,13 @@ class StoreSerializer(serializers.ModelSerializer):
 			'store_phone_number', 'store_address',
 		]
 
+class StoreWOUserSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Store
+		fields = [
+			'id', 'user', 'store_name',
+			'nearest_bus_stop', 'description',
+			'store_status', 'verified', 'rating',
+			'store_phone_number', 'store_address',
+		]
+
