@@ -7,13 +7,15 @@ from products.models import Product
 import json, requests, uuid, hmac, hashlib
 from django.conf import settings
 from .serializers import CheckoutSerializer, ReceiptCheckoutReceiptSerializer
+from search_app.serializers import SearchedCheckoutSerializer
 from users.models import User
 from hooks.prettyprint import pretty_print_json
-from hooks.cache_helpers import get_cache, set_cache
+from hooks.cache_helpers import get_cache, set_cache, clear_key_and_list_in_cache
 from .checkout_utils import create_paystack_customer, assign_virtual_account
 from .checkout_utils import process_successful_payment, process_failed_payment
 from .checkout_utils import checkout_status_fxn, valid_fields, field_mapping
 from .generate_rerference import generate_checkout_id
+from notifications.firebase_setup.firebase_notification_utils import send_fcm_notification_bulk
 
 cache_name = 'checkouts'
 cache_key = None
@@ -27,13 +29,14 @@ def generate_reference(request):
 			"reference": generate_checkout_id()
 		}, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
-def checkouts(request):
+def checkouts(request, checkoutId=None):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received checkout data:")
 		pretty_print_json(data)
+		# return Response({"message": "Checkouts endpoint is under construction."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 		cleaned_data = {key: value for key, value in data.items() if key in valid_fields}
 		for frontend_key, backend_key in field_mapping.items():
 			cleaned_data[backend_key] = data.get(frontend_key)
@@ -106,7 +109,59 @@ def checkouts(request):
 			'payment_method': checkout_instance.payment_method,
 		}
 		print(f"Generated reference: {response['reference']}")
+
+		# Invalidate cache
+		clear_key_and_list_in_cache(key=cache_name)
+		clear_key_and_list_in_cache(key='checkout_receipt_view')
+
+		# notify all staff users about new order
+		send_fcm_notification_bulk({
+			"id": checkout_instance.checkoutID,
+			"title": f"New Order Placed - {checkout_instance.checkoutID[:8]}",
+			"body": f"{checkout_instance.first_name} just placed an order worth ₦{checkout_instance.total_amount}.",
+			"shipping_status": checkout_instance.shipping_status,
+			"user": {
+				"id": checkout_instance.user.id if checkout_instance.user else None,
+				"first_name": checkout_instance.first_name,
+				"last_name": checkout_instance.last_name,
+				"email": checkout_instance.email,
+				"phone_code": checkout_instance.phone_code,
+				"mobile_no": checkout_instance.mobile_no,
+			},
+			"amount": {
+				"subtotal": str(checkout_instance.subtotal_amount),
+				"shipping_fee": str(checkout_instance.shipping_fee),
+				"total": str(checkout_instance.total_amount),
+			}
+		})
+
 		return Response(response, status=status.HTTP_200_OK)
+
+	elif request.method == 'GET':
+		print("GET method on checkouts called.")
+		print(f'checkoutId: {checkoutId}')
+
+		if checkoutId:
+			# checking for cached
+			cached_data = get_cache(cache_name, pk=checkoutId)
+			if cached_data:
+				return Response(cached_data, status=status.HTTP_200_OK)
+
+			checkout_obj = Checkout.objects.filter(checkoutID=checkoutId).first()
+			print(f"Fetched checkout object: {checkout_obj}")
+			if checkout_obj:
+				checkout_obj_serializer = SearchedCheckoutSerializer(checkout_obj).data
+				print("Serialized checkout data:")
+				pretty_print_json(checkout_obj_serializer)
+
+				# set cache
+				set_cache(cache_name, checkoutId, checkout_obj_serializer)
+
+				return Response(checkout_obj_serializer, status=status.HTTP_200_OK)
+			return Response({
+					"status": "error",
+					"message": "Checkout not found."
+				}, status=status.HTTP_404_NOT_FOUND)
 	return Response({"message": "Checkouts endpoint is under construction."}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
