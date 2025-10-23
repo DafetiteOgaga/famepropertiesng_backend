@@ -15,7 +15,7 @@ from .checkout_utils import create_paystack_customer, assign_virtual_account
 from .checkout_utils import process_successful_payment, process_failed_payment
 from .checkout_utils import checkout_status_fxn, valid_fields, field_mapping
 from .generate_rerference import generate_checkout_id
-from notifications.firebase_setup.firebase_notification_utils import send_fcm_notification_bulk
+from .checkout_utils import notify_staff_user
 
 cache_name = 'checkouts'
 cache_key = None
@@ -35,11 +35,15 @@ def checkouts(request, checkoutId=None):
 	if request.method == 'POST':
 		data = json.loads(request.body)
 		print("Received checkout data:")
+		print(''.rjust(30, 'z'))
+		currencySym = data.get("currencySymbol")
+		print(f"currencySym symbol: {currencySym}")
 		pretty_print_json(data)
 		# return Response({"message": "Checkouts endpoint is under construction."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 		cleaned_data = {key: value for key, value in data.items() if key in valid_fields}
 		for frontend_key, backend_key in field_mapping.items():
 			cleaned_data[backend_key] = data.get(frontend_key)
+		cleaned_data["currencySym"] = currencySym
 		userID = data.get('userID', None)
 		pod = data.get('paymentMethod', None) == "pay_on_delivery"
 		instllPay = data.get('paymentMethod', None) == "installmental_payment"
@@ -114,26 +118,9 @@ def checkouts(request, checkoutId=None):
 		clear_key_and_list_in_cache(key=cache_name)
 		clear_key_and_list_in_cache(key='checkout_receipt_view')
 
-		# notify all staff users about new order
-		send_fcm_notification_bulk({
-			"id": checkout_instance.checkoutID,
-			"title": f"New Order Placed - {checkout_instance.checkoutID[:8]}",
-			"body": f"{checkout_instance.first_name} just placed an order worth ₦{checkout_instance.total_amount}.",
-			"shipping_status": checkout_instance.shipping_status,
-			"user": {
-				"id": checkout_instance.user.id if checkout_instance.user else None,
-				"first_name": checkout_instance.first_name,
-				"last_name": checkout_instance.last_name,
-				"email": checkout_instance.email,
-				"phone_code": checkout_instance.phone_code,
-				"mobile_no": checkout_instance.mobile_no,
-			},
-			"amount": {
-				"subtotal": str(checkout_instance.subtotal_amount),
-				"shipping_fee": str(checkout_instance.shipping_fee),
-				"total": str(checkout_instance.total_amount),
-			}
-		})
+		if checkout_instance.payment_method == "pay_on_delivery":
+			# notify all staff users about new order
+			notify_staff_user(checkout_instance)
 
 		return Response(response, status=status.HTTP_200_OK)
 
@@ -147,7 +134,23 @@ def checkouts(request, checkoutId=None):
 			if cached_data:
 				return Response(cached_data, status=status.HTTP_200_OK)
 
-			checkout_obj = Checkout.objects.filter(checkoutID=checkoutId).first()
+			# checkout_obj = Checkout.objects.filter(checkoutID=checkoutId).first()
+
+			try:
+				# Try fetching by checkoutID first
+				checkout_obj = Checkout.objects.get(checkoutID=checkoutId)
+				installment = None
+			except Checkout.DoesNotExist:
+				# If not found, try by installment reference
+				try:
+					installment = InstallmentPayment.objects.get(reference=checkoutId)
+					checkout_obj = installment.checkout
+				except InstallmentPayment.DoesNotExist:
+					return Response(
+						{"status": "error", "message": "Checkout/Installment not found."},
+						status=status.HTTP_404_NOT_FOUND
+					)
+
 			print(f"Fetched checkout object: {checkout_obj}")
 			if checkout_obj:
 				checkout_obj_serializer = SearchedCheckoutSerializer(checkout_obj).data
