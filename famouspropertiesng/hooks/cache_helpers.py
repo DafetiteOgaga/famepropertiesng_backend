@@ -1,5 +1,13 @@
 from django.core.cache import cache
 
+def display_all_cache_keys(type="unspecified type"):
+    # Use global tracker to find keys starting with this prefix
+	all_cached_keys = cache.get('all_cached_keys', set())
+	print(f"🧩 Cache keys (during {type}):")
+	for k in all_cached_keys:
+		print(f"   • {k}")  # Show all cached keys
+	return all_cached_keys
+
 def clear_key_and_list_in_cache(key=None, id=None):
 	if not key:
 		cache.clear()
@@ -29,10 +37,7 @@ def clear_key_and_list_in_cache(key=None, id=None):
 		print(f"✅ Cleared {deleted_count} cache items related to key: {key}")
 
 	# Use global tracker to find keys starting with this prefix
-	all_cached_keys = cache.get('all_cached_keys', set())
-	print(f"🧩 Cache keys:")
-	for k in all_cached_keys:
-		print(f"   • {k}")  # Show all cached keys
+	all_cached_keys = display_all_cache_keys(type=f"after clearing {key}")
 
 	matching_keys = {k for k in all_cached_keys if str(k).startswith(f"{key}_list")}
 
@@ -59,6 +64,9 @@ def get_cached_response(cache_name, request, key_suffix, page_size=0, no_page_si
 		pages = f"_page_{page}_size_{page_size}"
 	cache_key = f"{cache_name}_{key_suffix}{pages}"
 
+	# Use global tracker to find keys starting with this prefix
+	display_all_cache_keys(type="cache lookup for " + cache_key)
+
 	cached_data = cache.get(cache_key)
 	if cached_data:
 		print(f"Cache hit for: {cache_key}")
@@ -83,11 +91,18 @@ def set_cached_response(cache_name, cache_key, tracked_keys, data, timeout=None)
 		cache.set(f"{cache_name}_tracked_keys", tracked_keys, None)
 	print(f"Cached result for {cache_key}{' and not tracked.' if timeout else ''}")
 
+	# Use global tracker to find keys starting with this prefix
+	display_all_cache_keys(type="after setting " + cache_key)
+
 def get_cache(cache_name, pk):
 	"""
 	Retrieve data from cache by key.
 	"""
 	cache_key = f"{cache_name}_{pk}"
+
+	# Use global tracker to find keys starting with this prefix
+	display_all_cache_keys(type="cache lookup for " + cache_key)
+
 	data = cache.get(cache_key)
 	if data is not None:
 		print(f"Cache hit for: {cache_key}")
@@ -103,3 +118,6 @@ def set_cache(cache_name, pk, data, timeout=None):
 	cache_key = f"{cache_name}_{pk}"
 	cache.set(cache_key, data, timeout=timeout)
 	print(f"Cached data as {cache_key}{' and expires in ' + str(timeout) + ' seconds' if timeout else ''}.")
+
+	# Use global tracker to find keys starting with this prefix
+	display_all_cache_keys(type="after setting " + cache_key)
