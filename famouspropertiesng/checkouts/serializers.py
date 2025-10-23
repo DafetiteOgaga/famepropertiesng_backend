@@ -1,10 +1,16 @@
 from rest_framework import serializers
 from .models import Checkout, CheckoutProduct, InstallmentPayment
 from users.serializers import UserSerializerWRatings
-from products.serializers import ProductWOCatSerializer
+from products.serializers import ProductWOCatSerializer, ProductWTotalNumAndStoreSerializer
 
 # Create your serializers here.
 class CheckoutProductSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = CheckoutProduct
+		fields = '__all__'
+
+class CheckoutProductWProductDetaiilsSerializer(serializers.ModelSerializer):
+	product = ProductWTotalNumAndStoreSerializer(read_only=True)
 	class Meta:
 		model = CheckoutProduct
 		fields = '__all__'
@@ -21,7 +27,6 @@ class CheckoutSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Checkout
 		fields = '__all__'
-
 
 class ReceiptCheckoutProductSerializer(serializers.ModelSerializer):
 	product_id = serializers.IntegerField(source='product.id', read_only=True)
