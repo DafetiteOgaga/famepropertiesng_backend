@@ -30,7 +30,7 @@ class Checkout(models.Model):
 		max_length=32,
 		default=generate_checkout_id,
 		db_index=True,
-		editable=False,
+		# editable=False,
 		unique=True
 	)
 
@@ -48,6 +48,8 @@ class Checkout(models.Model):
 	phone_code = models.CharField(max_length=10, null=True, blank=True, default="+234")
 	mobile_no = models.CharField(max_length=20, null=True, blank=True)
 	address = models.CharField(max_length=200, null=True, blank=True)
+	lga = models.CharField(max_length=100, null=True, blank=True)
+	subArea = models.CharField(max_length=100, null=True, blank=True)
 	city = models.CharField(max_length=100, null=True, blank=True)
 	state = models.CharField(max_length=100, null=True, blank=True)
 	country = models.CharField(max_length=100, null=True, blank=True)
