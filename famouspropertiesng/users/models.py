@@ -9,6 +9,9 @@ class User(AbstractUser):
 	address = models.CharField(max_length=200)
 
 	# location fields
+	# nigerian locations
+	lga = models.CharField(max_length=100, null=True, blank=True)
+	subArea = models.CharField(max_length=100, null=True, blank=True)
 	# city
 	city = models.CharField(max_length=100, null=True, blank=True)
 	cityId = models.IntegerField(null=True, blank=True)
