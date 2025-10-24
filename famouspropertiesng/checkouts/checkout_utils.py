@@ -377,6 +377,7 @@ def notify_staff_user(checkout_instance):
 		"title": f"{titleTxt} - {id[:8]}",
 		"body": f"{first_name} {bodyTxt} {currency}{amount}.",
 		"shipping_status": shipping_status,
+		"status": shipping_status,
 		"user": {
 			"id": userID,
 			"first_name": first_name,
