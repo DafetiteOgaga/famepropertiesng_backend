@@ -352,7 +352,9 @@ def process_failed_payment(checkout, data):
 def is_checkout(obj):
 	return isinstance(obj, Checkout)
 
-def notify_staff_user(checkout_instance):
+def notify_staff_user(checkout_instance, update=False):
+	updatedTitle = None
+	updatedBody = None
 	check_type = 'checkout' if is_checkout(checkout_instance) else 'installment'
 	id = checkout_instance.checkoutID if check_type != 'installment' else checkout_instance.reference
 	titleTxt = "New Order Placed" if check_type != 'installment' else "New Installment Paid"
@@ -370,12 +372,15 @@ def notify_staff_user(checkout_instance):
 	shipping_fee = checkout_instance.shipping_fee if check_type != 'installment' else checkout_instance.checkout.shipping_fee
 	total_amount = checkout_instance.total_amount if check_type != 'installment' else checkout_instance.checkout.total_amount
 	amount_paid = checkout_instance.total_amount if check_type != 'installment' else checkout_instance.amount_paid
+	if update:
+		updatedTitle = f"Order - {id[22:]} Updated"
+		updatedBody = f"Order {id[22:]} status updated to {shipping_status}: "
 	print("".rjust(30, 'y'))
 	print(f"currency: {currency}, amount: {amount}")
 	send_fcm_notification_bulk({
 		"id": id,
-		"title": f"{titleTxt} - {id[:8]}",
-		"body": f"{first_name} {bodyTxt} {currency}{amount}.",
+		"title": updatedTitle if update else f"{titleTxt} - {id[22:]}",
+		"body": updatedBody if update else f"{first_name} {bodyTxt} {currency}{amount}.",
 		"shipping_status": shipping_status,
 		"status": shipping_status,
 		"user": {
