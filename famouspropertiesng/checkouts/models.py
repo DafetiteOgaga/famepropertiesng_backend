@@ -36,10 +36,10 @@ class Checkout(models.Model):
 
 	# If user is registered, link to user model; else, allow null for guest checkout
 	user = models.ForeignKey('users.User',
-        on_delete=models.CASCADE,
-        related_name='rn_checkouts',
-        null=True,
-        blank=True)
+		on_delete=models.CASCADE,
+		related_name='rn_checkouts',
+		null=True,
+		blank=True)
 
 	# Customer details
 	first_name = models.CharField(max_length=100, null=True, blank=True)
@@ -86,12 +86,29 @@ class Checkout(models.Model):
 	# Return or refund status
 	return_or_refund_status = models.CharField(max_length=50, choices=RETURN_STATUS_CHOICES, default='none')  # e.g., none, requested, processed
 
+	# extras
+	shipped_by = models.ForeignKey('users.User',
+										on_delete=models.SET_NULL,
+										related_name='rn_shipped_by',
+										null=True,
+										blank=True)
+	delivered_by = models.ForeignKey('users.User',
+										on_delete=models.SET_NULL,
+										related_name='rn_delivered_by',
+										null=True,
+										blank=True)
+	cancelled_by = models.ForeignKey('users.User',
+										on_delete=models.SET_NULL,
+										related_name='rn_cancelled_by',
+										null=True,
+										blank=True)
+
 	# Timestamps
 	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return f"Checkout {self.email} - {self.checkoutID[:14]}"
+		return f"Checkout {self.email} - {self.checkoutID[14:]}"
 	def total_paid(self):
 		return self.rn_installments.aggregate(total=Sum("amount_paid"))["total"] or 0
 	def record_installment(self, reference, amount, transaction_id, payment_channel):

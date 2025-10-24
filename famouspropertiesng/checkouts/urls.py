@@ -7,6 +7,7 @@ urlpatterns = [
 	# Create your urlpatterns here.
 	path('checkouts/', views.checkouts, name='checkouts'),
 	path('checkout/<str:checkoutId>/', views.checkouts, name='checkout'),
+	path('update-checkout/<int:pk>/<checkoutID>/', views.update_checkout, name='update-checkout'),
 	path('verify-payment/<str:reference>/', views.verify_paystack_payment, name='verify-payment'),
 	path('generate-reference/', views.generate_reference, name="generate_reference"),
 	path("receipt/<str:reference>/", views.checkout_receipt_view, name="receipt"),

@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from .models import Checkout, CheckoutProduct, InstallmentPayment
 from products.models import Product
@@ -129,6 +129,11 @@ def checkouts(request, checkoutId=None):
 		print(f'checkoutId: {checkoutId}')
 
 		if checkoutId:
+
+			# # testing
+			# print(f"cache_name: {cache_name}, checkoutId: {checkoutId}")
+			# clear_key_and_list_in_cache(key=cache_name, id=checkoutId)
+
 			# checking for cached
 			cached_data = get_cache(cache_name, pk=checkoutId)
 			if cached_data:
@@ -504,6 +509,53 @@ def has_unfulfilled_installments_and_or_unsettled_delivery_payments(request, pk)
 
 		return Response(response, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def update_checkout(request, pk=None, checkoutID=None):
+	# make this a staff only endpoint
+	data = json.loads(request.body)
+	print("Received update checkout data:")
+	pretty_print_json(data)
+	print(f"Received request to update checkout ID: {checkoutID} for user ID: {pk}")
+
+	print(f"Verifying staff user: {request.user}")
+
+	staff = User.objects.get(pk=request.user.id)
+	if not staff.is_staff:
+		return Response({"status": "error", "message": "Permission denied. Staff only."}, status=status.HTTP_403_FORBIDDEN)
+
+	checkout = Checkout.objects.filter(checkoutID=checkoutID).first()
+	if not checkout:
+		return Response({"status": "error", "message": "Checkout not found."}, status=status.HTTP_404_NOT_FOUND)
+
+	# update fields in the data
+	for key, value in data.items():
+		if hasattr(checkout, key):
+			old_value = getattr(checkout, key)
+			setattr(checkout, key, value)
+			print(f"Updated {key} from {old_value} to {value}")
+
+		# Handle staff tracking for status updates
+		if key == 'shipping_status':
+			if value == 'delivered':
+				setattr(checkout, 'delivered_by', staff)
+			elif value == 'shipped':
+				setattr(checkout, 'shipped_by', staff)
+			elif value == 'cancelled':
+				setattr(checkout, 'cancelled_by', staff)
+
+	checkout.save()
+	serialised_checkout = SearchedCheckoutSerializer(checkout).data
+
+	# Invalidate cache
+	clear_key_and_list_in_cache(key=cache_name, id=checkout.checkoutID)
+	clear_key_and_list_in_cache(key='checkout_receipt_view')
+
+	# notify all staff users about new order
+	notify_staff_user(checkout, update=True)
+
+	return Response(serialised_checkout, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def ch(request):

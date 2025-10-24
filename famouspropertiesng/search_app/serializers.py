@@ -102,6 +102,9 @@ class SearchedCheckoutProductMiniSerializer(serializers.ModelSerializer):
 class SearchedCheckoutSerializer(serializers.ModelSerializer):
 	products = SearchedCheckoutProductMiniSerializer(source='rn_checkout_products', many=True, read_only=True)
 	installments = SeachedInstallmentPaymentSerializer(source='rn_installments', many=True, read_only=True)
+	shipped_by = InlineUserSerializer(read_only=True)
+	delivered_by = InlineUserSerializer(read_only=True)
+	cancelled_by = InlineUserSerializer(read_only=True)
 	class Meta:
 		model = Checkout
 		# fields = '__all__'
