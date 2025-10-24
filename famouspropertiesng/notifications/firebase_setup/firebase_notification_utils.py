@@ -182,7 +182,7 @@ def send_fcm_notification_bulk(data):
             ),
             data={  # ✅ put custom fields here
                 "id": str(data.get("id")),
-                "status": data.get("status", "pending"),
+                "status": data.get("shipping_status", "pending"),
                 "shipping_status": data.get("shipping_status"), # opti
                 "user": json.dumps(data["user"]),
                 "amount": json.dumps(data["amount"]),
@@ -262,9 +262,14 @@ def test_noti(idx=None):
         return
 
     print(f"Testing notification for index: {idx}")
+
+    #     "20251023225321937811f15d9e7125",
+    #     "20251024071729938112796f9e0a2a",
+    #     "20251024072346753998de6a66fefa"
+
     data = [
         {
-            "id": "202510161328498423527f4b57fdd0",
+            "id": "20251014005259372830e04fc64c79",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "John Doe just placed a new order worth ₦45,500.",
             "status": "pending",
@@ -284,7 +289,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd1",
+            "id": "2025101401220833335851a370a51b",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Chioma Okafor just placed a new order worth ₦32,800.",
             "status": "pending",
@@ -304,7 +309,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd2",
+            "id": "20251014022258379498720911566b",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Emeka Uche just placed a new order worth ₦27,000.",
             "status": "failed",
@@ -324,7 +329,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd3",
+            "id": "20251023212402857307fd687b026f",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Amina Bello just placed a new order worth ₦19,750.",
             "status": "pending",
@@ -344,7 +349,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd4",
+            "id": "20251023212704912260d01d00d911",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Tunde Balogun just placed a new order worth ₦52,600.",
             "status": "pending",
@@ -364,7 +369,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd5",
+            "id": "20251023220237281106e158b68c6d",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Adaeze Nwosu just placed a new order worth ₦61,200.",
             "status": "pending",
@@ -384,7 +389,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd6",
+            "id": "20251023221849937388fcd91e6be5",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Ibrahim Musa just placed a new order worth ₦14,500.",
             "status": "pending",
@@ -404,7 +409,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd7",
+            "id": "20251023223306477042efbb6e4a53",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Ngozi Eze just placed a new order worth ₦38,900.",
             "status": "pending",
@@ -424,7 +429,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd8",
+            "id": "202510232244274937953b93cf3200",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Samuel Adeyemi just placed a new order worth ₦23,000.",
             "status": "failed",
@@ -444,7 +449,7 @@ def test_noti(idx=None):
             },
         },
         {
-            "id": "202510161328498423527f4b57fdd9",
+            "id": "20251023224537953547fb2a2105d8",
             "title": "New Order Placed - 7f4b57fdd0",
             "body": "Grace Alabi just placed a new order worth ₦41,400.",
             "status": "pending",
