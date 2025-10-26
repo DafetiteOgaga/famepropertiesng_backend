@@ -220,11 +220,13 @@ def search_data(request, pk=None, s_text=None):
 									many=True).data
 
 		# --- 4. Email search ---
-		# if '@' in search_text:
-			# results["users"] = list(User.objects.filter(email__iexact=search_text).values())
 		print("Performing email-based search with the search text:", search_text)
 		results["users"] = SearchedUserSerializer(
-							User.objects.filter(email__icontains=search_text),
+							User.objects.filter(
+								Q(email__icontains=search_text) |
+								Q(first_name__icontains=search_text) |
+								Q(id__iexact=search_text)
+							).distinct(),
 							many=True).data
 
 		# --- 5. Name-based (partial) search ---
