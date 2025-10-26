@@ -560,6 +560,37 @@ def update_checkout(request, pk=None, checkoutID=None):
 	return Response(serialised_checkout, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([IsAdminUser])
+def incomplete_checkouts_ids(request, pk):
+	print(f"Received request to fetch incomplete checkout IDs for user ID: {pk}")
+	# print(f"requested by staff user: {request.user}")
+	print(f"Verifying staff user: {request.user}")
+	if request.method == 'GET':
+		print(f"Fetching incomplete checkout IDs for user ID: {pk}")
+		user = User.objects.get(pk=pk)
+		print(f"Found user: {user.email}")
+		# operation = {
+		# 	"method": "pay_on_delivery" if type=='pod' else "installmental_payment",
+		# 	"has": "has_unsettled_delivery_payments" if type=='pod' else "has_unfulfilled_installments",
+		# 	"ids": "unsettled_checkout_ids" if type=='pod' else "unfulfilled_checkout_ids",
+		# }
+		processing_checkouts = Checkout.objects.filter(
+			shipping_status="processing"
+		).values("checkoutID", "updated_at")
+		print(f"Pending checkouts found:")
+		[print(f"	- {checkout_id['checkoutID']} at {checkout_id['updated_at']}") for checkout_id in list(processing_checkouts)]
+		# print(f'list(pending_checkouts): {list(pending_checkouts)}')
+		# data = {
+		# 	"id": user.id,
+		# 	"email": user.email,
+		# 	operation["has"]: pending_checkouts.exists(),
+		# 	operation["ids"]: list(pending_checkouts),
+		# }
+		# pretty_print_json(processing_checkouts)
+		return Response(processing_checkouts, status=status.HTTP_200_OK)
+	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+@api_view(['GET'])
 def ch(request):
 	request_info = {
 		"method": request.method,
