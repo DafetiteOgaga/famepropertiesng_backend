@@ -16,6 +16,7 @@ urlpatterns = [
 	path('checkout-status/<str:reference>/', views.checkout_status, name='checkout-status'),
 	path("get-unfulfilled-and-or-unsettled-checkout-ids/<int:pk>/<str:type>/", views.get_unfulfilled_checkout_ids, name="get-unfulfilled-checkout-ids"),
 	path("has-unfulfilled-and-or-unsettled/<int:pk>/", views.has_unfulfilled_installments_and_or_unsettled_delivery_payments, name="has-unfulfilled-and-or-unsettled"),
+	path('all-unfulfilled-checkouts/<int:pk>/', views.incomplete_checkouts_ids, name='incomplete-checkouts'),
 	# path("get-unsettled-checkout-ids/<int:pk>/", views.get_unfulfilled_checkout_ids, name="get-unsettled-checkout-ids"),
 	path("ch/", views.ch, name="ch")
 ]
