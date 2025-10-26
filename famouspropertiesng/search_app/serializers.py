@@ -105,11 +105,14 @@ class SearchedCheckoutSerializer(serializers.ModelSerializer):
 	shipped_by = InlineUserSerializer(read_only=True)
 	delivered_by = InlineUserSerializer(read_only=True)
 	cancelled_by = InlineUserSerializer(read_only=True)
+	total_installment_paid = serializers.SerializerMethodField()
 	class Meta:
 		model = Checkout
 		# fields = '__all__'
 		exclude = ['id', 'user', 'pod_account_number', 'pod_bank_name',
 					'pod_account_name']
+	def get_total_installment_paid(self, obj):
+		return obj.total_paid()
 
 class SearchedCheckoutProductSerializer(serializers.ModelSerializer):
 	store = SearchedStoreSerializer(read_only=True)
