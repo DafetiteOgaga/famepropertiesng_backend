@@ -521,6 +521,8 @@ def update_checkout(request, pk=None, checkoutID=None):
 
 	print(f"Verifying staff user: {request.user}")
 
+	# return Response({"message": "Update checkout endpoint is under construction."}, status=status.HTTP_200_OK)
+
 	staff = User.objects.get(pk=request.user.id)
 	if not staff.is_staff:
 		return Response({"status": "error", "message": "Permission denied. Staff only."}, status=status.HTTP_403_FORBIDDEN)
