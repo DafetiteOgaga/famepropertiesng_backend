@@ -16,6 +16,7 @@ from .checkout_utils import process_successful_payment, process_failed_payment
 from .checkout_utils import checkout_status_fxn, valid_fields, field_mapping
 from .generate_rerference import generate_checkout_id
 from .checkout_utils import notify_staff_user
+from django.db.models import Q
 
 cache_name = 'checkouts'
 cache_key = None
@@ -570,10 +571,10 @@ def incomplete_checkouts_ids(request, pk):
 		user = User.objects.get(pk=pk)
 		print(f"Found user: {user.email}")
 		processing_checkouts = Checkout.objects.filter(
-			shipping_status="processing"
+			shipping_status__in=["processing", "shipped"],
 		).values("checkoutID", "updated_at")
 		print(f"Pending checkouts found:")
-		[print(f"	- {checkout_id['checkoutID']} at {checkout_id['updated_at']}") for checkout_id in list(processing_checkouts)]
+		[print(f"	- {idx+1}. {checkout_id['checkoutID']} at {checkout_id['updated_at']}") for idx, checkout_id in enumerate(list(processing_checkouts))]
 		# pretty_print_json(processing_checkouts)
 		return Response(processing_checkouts, status=status.HTTP_200_OK)
 	return Response({"message": "Invalid request method."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
