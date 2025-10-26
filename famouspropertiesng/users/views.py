@@ -71,6 +71,7 @@ allowed_update_fields = [
 	"countryEmoji",
 	"lga",
 	"subArea",
+	"is_staff",
 ]
 
 def get_basic_auth_header():
@@ -217,7 +218,11 @@ def updateUser(request, pk):
 		data_keys = data.keys()
 		for field in allowed_update_fields:
 			if field in data_keys:
+				previous_value = getattr(user, field, None)
 				update_fields[field] = data[field]
+				print(f"❎ Field '{field}' will be updated from '{previous_value}' to '{data[field]}'")
+			else:
+				print(f"🚫 Field '{field}' not in received data for update.")
 
 		if 'password' in update_fields:
 			password = update_fields.pop('password')
