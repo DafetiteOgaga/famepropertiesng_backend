@@ -59,4 +59,4 @@ def delete_object_and_image(request, classObject, cache_name):
 				{"error": "Failed to delete from ImageKit", "details": details},
 				status=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			)
-	return Response({"error": "Only POST allowed"}, status=405)
+	return Response({"error": "Only POST allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
