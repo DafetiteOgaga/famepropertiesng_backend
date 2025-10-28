@@ -213,6 +213,15 @@ def updateUser(request, pk):
 		except User.DoesNotExist:
 			return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
+		# if password change
+		old_password = data.get("old_password", None)
+		print(f"Old password provided: {old_password if old_password else 'None'}")
+		if old_password:
+			print(f"Password change requested for user {pk}.")
+			if not user.check_password(old_password):
+				print("Old password is incorrect.")
+				return Response({"error": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+
 		# Update only allowed fields
 		update_fields = {}
 		data_keys = data.keys()
@@ -233,7 +242,7 @@ def updateUser(request, pk):
 
 		print(f"User before saving:")
 		pretty_print_json(user.__dict__)
-		# return Response({"ok": "all good"}, status=status.HTTP_423_LOCKED)
+		# return Response({"message": "all good"}, status=status.HTTP_423_LOCKED)
 		user.save()
 		updated_user_data = UserSerializerWRatings(user).data
 
