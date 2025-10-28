@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import status
 from .models import StaffFCMToken
 from hooks.prettyprint import pretty_print_json
 from hooks.cache_helpers import clear_key_and_list_in_cache
@@ -20,7 +21,7 @@ def register_fcm_token(request):
 	print(f"From user: {request.user}")
 
 	if not token or not device_info:
-		return Response({"error": "FCM token and device_info are required"}, status=400)
+		return Response({"error": "FCM token and device_info are required"}, status=status.HTTP_400_BAD_REQUEST)
 
 	# Try a few times in case of temporary lock
 	for attempt in range(3):
