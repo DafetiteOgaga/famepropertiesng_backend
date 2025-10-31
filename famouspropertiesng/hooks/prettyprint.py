@@ -1,9 +1,9 @@
 import json
 try:
     from .dont_push import mode
-    print(f"Development mode")
+    print(f"Development mode 🔨")
 except Exception as e:
-    print(f"Production mode")
+    print(f"Production mode ☁")
     mode = 'prod'
 
 def pretty_print_json(data):
@@ -18,3 +18,4 @@ def pretty_print_json(data):
         print(json.dumps(data, indent=4, sort_keys=True, default=str))
     else:
         print(data)
+    print("".rjust(40, '*'))
