@@ -204,10 +204,10 @@ def search_data(request, pk=None, s_text=None):
 		# --- 3. ID / Reference / Alphanumeric search ---
 		if re.fullmatch(r'[A-Za-z0-9]+', search_text):
 			results["checkout"] = SearchedCheckoutSerializer(
-									Checkout.objects.filter(checkoutID=search_text),
+									Checkout.objects.filter(checkoutID__icontains=search_text),
 									many=True).data
 			results["installment_payments"] = SeachedInstallmentPaymentSerializer(
-												InstallmentPayment.objects.filter(reference=search_text),
+												InstallmentPayment.objects.filter(reference__icontains=search_text),
 												many=True).data
 
 		# --- 3. ID search ---
